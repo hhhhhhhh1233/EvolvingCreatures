@@ -58,6 +58,8 @@ public:
 	void SetUiRender(const std::function<void()>& func);
 
 	float GetAspectRatio();
+
+	std::pair<int, int> GetWidthHeight();
 private:
 
 	/// static key press callback
@@ -204,6 +206,11 @@ Window::SetUiRender(const std::function<void()>& func)
 inline float Window::GetAspectRatio()
 {
 	return width/float(height);
+}
+
+inline std::pair<int, int> Window::GetWidthHeight()
+{
+	return { width, height };
 }
 
 } // namespace Display

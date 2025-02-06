@@ -49,7 +49,7 @@ public:
 
 };
 
-GraphicsNode LoadGLTF(std::string directory, std::string file, std::shared_ptr<ShaderResource> Shader) {
+GraphicsNode LoadGLTF(std::string directory, std::string file, std::shared_ptr<ShaderResource> Shader, std::shared_ptr<TextureResource> Texture = nullptr) {
 	GraphicsNode node;
 	
 	fx::gltf::Document obj;
@@ -60,6 +60,8 @@ GraphicsNode LoadGLTF(std::string directory, std::string file, std::shared_ptr<S
 	{
 		mesh = std::shared_ptr<MeshResource>(MeshResource().MoveToSharedPointer());
 		mesh->material.shader = Shader;
+		if (Texture != nullptr)
+			mesh->material.texture = Texture;
 	}
 
 	for (size_t meshIndex = 0; meshIndex < obj.meshes.size(); meshIndex++) {
@@ -67,7 +69,8 @@ GraphicsNode LoadGLTF(std::string directory, std::string file, std::shared_ptr<S
 		glGenVertexArrays(1, &node.meshes[meshIndex]->vertexArrayObject);
 		glBindVertexArray(node.meshes[meshIndex]->vertexArrayObject);
 		
-		node.meshes[meshIndex]->material.texture->LoadFromFile((directory + (obj.images[obj.materials[meshIndex].pbrMetallicRoughness.baseColorTexture.index].uri)).c_str());
+		if (node.meshes[meshIndex]->material.texture->texture == 0)
+			node.meshes[meshIndex]->material.texture->LoadFromFile((directory + (obj.images[obj.materials[meshIndex].pbrMetallicRoughness.baseColorTexture.index].uri)).c_str());
 		if (obj.materials[meshIndex].normalTexture.index != -1)
 			node.meshes[meshIndex]->material.normal->LoadFromFile((directory + obj.images[obj.materials[meshIndex].normalTexture.index].uri).c_str());
 

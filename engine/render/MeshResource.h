@@ -51,7 +51,7 @@ public:
 
 	void draw()
 	{
-		if (material.shader != nullptr && material.texture != nullptr)
+		if (material.shader != nullptr || material.texture != nullptr)
 			material.Apply();
 		glBindVertexArray(vertexArrayObject);
 		if (indexBuffer)
@@ -597,13 +597,17 @@ static MeshResource CreateQuad(float width, float height)
 	GLfloat buf[] =
 	{
 		-width / 2,	-height / 2,	depth,			// pos 0
-		1,		0,		0,		1,	// color 0
-		-width / 2,	height / 2,	depth,			// pos 1
-		0,		1,		0,		1,	// color 0
-		width / 2,	height / 2,	depth,			// pos 2
-		0,		0,		1,		1,	// color 0
+		0, 0,										// UV
+		0, 0, -1,									// NORMAL
+		-width / 2,	height / 2,	depth,				// pos 1
+		0, 1,										// UV
+		0, 0, -1,									// NORMAL
+		width / 2,	height / 2,	depth,				// pos 2
+		1, 1,										// UV
+		0, 0, -1,									// NORMAL
 		width / 2,	-height / 2,	depth,			// pos 3
-		0,		0,		1,		1	// color 0
+		1, 0,										// UV
+		0, 0, -1,									// NORMAL
 	};
 
 	GLuint ib[] =
@@ -632,8 +636,10 @@ static MeshResource CreateQuad(float width, float height)
 
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 7, NULL);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (GLvoid*)(sizeof(float) * 3));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, NULL);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (GLvoid*)(sizeof(float) * 3));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (GLvoid*)(sizeof(float) * 5));
 	
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
