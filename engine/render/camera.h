@@ -12,13 +12,19 @@ public:
 	float yaw, pitch;
 
 	/// CONTROLLABLE CAMERA MOVEMENT PROPERTIES
+	const float DEFAULT_SPEED = 6.0;
+	const float MIN_SPEED = 0.1;
+	const float MAX_SPEED = 30;
+	const float SPEED_DELTA = 0.1;
+
 	const float verticalLimit = 3.14/2; /// How many radians up or down the camera can move
-	float speed = 3;
+	float speed = DEFAULT_SPEED;
 	float mouseSpeed = 0.5;
 	double horizontalAngle = 3.141592;
 	double verticalAngle = 0;
 	bool bFirstPress = true;
 	double xOldPos, yOldPos;
+
 
 	Camera()
 	{
@@ -72,6 +78,24 @@ public:
 				glfwSetCursorPos(window, xOldPos, yOldPos);
 			}
 			bFirstPress = true;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+		{
+			speed -= SPEED_DELTA;
+			speed = speed < MIN_SPEED ? MIN_SPEED : speed;
+			//std::cout << "Speed is " << speed << "\n";
+		}
+		else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+		{
+			speed += SPEED_DELTA;
+			speed = speed > MAX_SPEED ? MAX_SPEED : speed;
+			//std::cout << "Speed is " << speed << "\n";
+		}
+		else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+		{
+			speed = DEFAULT_SPEED;
+			//std::cout << "Speed is " << speed << "\n";
 		}
 
 		/// MOVE THE CAMERA POSITION
