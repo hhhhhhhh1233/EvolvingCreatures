@@ -78,6 +78,139 @@ ExampleApp::Close()
 //------------------------------------------------------------------------------
 /**
 */
+
+class CreaturePart
+{
+public:
+	physx::PxArticulationLink* mLink;
+	physx::PxMaterial* mPhysicsMaterial;
+	physx::PxShapeFlags mShapeFlags;
+	physx::PxArticulationJointReducedCoordinate* mJoint;
+	
+	std::vector<CreaturePart*> mChildren;
+
+	GraphicsNode mNode;
+	vec3 mScale;
+
+	CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags) : mPhysicsMaterial(PhysicsMaterial), mShapeFlags(ShapeFlags)
+	{
+
+	}
+
+	void AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node)
+	{
+		physx::PxShape* shape = Physics->createShape(physx::PxBoxGeometry({Scale.x, Scale.y, Scale.z}), &mPhysicsMaterial, 1, true, mShapeFlags);
+		mLink->attachShape(*shape);
+		shape->release();
+		mScale = Scale;
+		mNode = Node;
+	}
+
+	void AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
+		physx::PxShapeFlags ShapeFlags, vec3 Scale, GraphicsNode Node, vec3 RelativePosition)
+	{
+		CreaturePart* NewPart = new CreaturePart(PhysicsMaterial, ShapeFlags);
+		NewPart->mLink = Articulation->createLink(mLink, physx::PxTransform(physx::PxIdentity));
+		NewPart->AddBoxShape(Physics, Scale, Node);
+
+		NewPart->mJoint = NewPart->mLink->getInboundJoint();
+		NewPart->mJoint->setParentPose(physx::PxTransform(physx::PxIdentity));
+		NewPart->mJoint->setChildPose(physx::PxTransform({RelativePosition.x, RelativePosition.y, RelativePosition.z}));
+
+		NewPart->ConfigureJoint();
+		
+		mChildren.push_back(NewPart);
+	}
+
+	/// TODO: Add options to this for different styled joints
+	/// PosDrive should probably be a parameter
+	void ConfigureJoint()
+	{
+		/// Configure the joint type and motion, limited motion
+		mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
+		mJoint->setMotion(physx::PxArticulationAxis::eTWIST, physx::PxArticulationMotion::eFREE);
+		physx::PxArticulationLimit limits;
+		limits.low = -physx::PxPiDivFour;
+		limits.high = physx::PxPiDivFour;
+		mJoint->setLimitParams(physx::PxArticulationAxis::eTWIST, limits);
+
+		/// Add joint drive
+		physx::PxArticulationDrive posDrive;
+		posDrive.stiffness = 0;
+		posDrive.damping = 0;
+		posDrive.maxForce = 0;
+		posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
+
+		/// Apply and Set targets (note the consistent axis)
+		mJoint->setDriveParams(physx::PxArticulationAxis::eTWIST, posDrive);
+		mJoint->setDriveVelocity(physx::PxArticulationAxis::eTWIST, 0.0f);
+		mJoint->setDriveTarget(physx::PxArticulationAxis::eTWIST, 0);
+	}
+
+	void Update()
+	{
+		physx::PxVec3 Pos = mLink->getGlobalPose().p;
+		vec3 Position(Pos.x, Pos.y, Pos.z);
+
+		mat4 RotMat;
+		{
+			physx::PxQuat dynQuat = mLink->getGlobalPose().q;
+			auto xVec = dynQuat.getBasisVector0();
+			auto yVec = dynQuat.getBasisVector1();
+			auto zVec = dynQuat.getBasisVector2();
+			RotMat = mat4(vec4(xVec.x, xVec.y, xVec.z, 0), vec4(yVec.x, yVec.y, yVec.z, 0), vec4(zVec.x, zVec.y, zVec.z, 0), vec4(0, 0, 0, 1));
+		}
+
+		mNode.transform = translate(Position) * RotMat * scale(mScale.x, mScale.y, mScale.z);
+
+		for (auto Child : mChildren)
+			Child->Update();
+	}
+
+	void Draw(mat4 ViewProjection)
+	{
+		mNode.draw(ViewProjection);
+
+		for (auto Child : mChildren)
+			Child->Draw(ViewProjection);
+	}
+};
+
+class Creature
+{
+public:
+	physx::PxArticulationReducedCoordinate* mArticulation;
+	CreaturePart* mRootPart;
+	
+	Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale)
+	{
+		mArticulation = Physics->createArticulationReducedCoordinate();
+		mArticulation->setArticulationFlag(physx::PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
+
+		//mRootPart = new CreaturePart(this, PhysicsMaterial, ShapeFlags);
+		mRootPart = new CreaturePart(PhysicsMaterial, ShapeFlags);
+		mRootPart->mLink = mArticulation->createLink(NULL, physx::PxTransform(physx::PxIdentity));
+
+		mRootPart->AddBoxShape(Physics, Scale, Node);
+	}
+
+	void AddToScene(physx::PxScene* Scene)
+	{
+		Scene->addArticulation(*mArticulation);
+	}
+
+	void Update()
+	{
+		mRootPart->Update();
+	}
+
+	void Draw(mat4 ViewProjection)
+	{
+		mRootPart->Draw(ViewProjection);
+	}
+};
+
+
 void
 ExampleApp::Run()
 {
@@ -152,7 +285,7 @@ ExampleApp::Run()
 	PointLightSource light;
 	light.position = vec3(0, 0, -2);
 	light.color = vec3(1, 1, 1);
-	light.intensity = 1;
+	light.intensity = 0.2;
 
 	DirectionalLightSource sun;
 	sun.direction = vec3(0, -1, -3);
@@ -260,55 +393,13 @@ ExampleApp::Run()
 	/// [BEGIN] ARTICULATIONS
 	/// ----------------------------------------
 
-	physx::PxArticulationReducedCoordinate* articulation = mPhysics->createArticulationReducedCoordinate();
+	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(0.5f, 2.5f, 0.5f));
+	NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(1,0,0));
+	NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(-1,0,0));
+	NewCreature->mRootPart->mChildren[1]->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(-1, 0, 0));
+	NewCreature->mRootPart->mChildren[1]->mChildren[0]->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(-1, 0, 0));
 
-	articulation->setArticulationFlag(physx::PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
-
-	//physx::PxRigidDynamic* rootLinkRigidDynamic = mPhysics->createRigidDynamic(physx::PxTransform(physx::PxIdentity));
-	physx::PxArticulationLink* rootLink = articulation->createLink(NULL, physx::PxTransform(physx::PxIdentity));
-	//physx::PxRigidActorExt::createExclusiveShape(*rootLinkRigidDynamic, physx::PxBoxGeometry(0.5f, 2.f, 0.5f), *materialPtr);
-	//physx::PxRigidBodyExt::updateMassAndInertia(*rootLinkRigidDynamic, 1.0f);
-	{
-		physx::PxShape* shape = mPhysics->createShape(physx::PxBoxGeometry(0.5f, 2.5f, 0.5f), &materialPtr, 1, true, shapeFlags);
-		rootLink->attachShape(*shape);
-		shape->release();
-	}
-
-	//physx::PxRigidDynamic* rootLinkRigidDynamicArm = mPhysics->createRigidDynamic(physx::PxTransform(physx::PxIdentity));
-	physx::PxArticulationLink* link = articulation->createLink(rootLink, physx::PxTransform(physx::PxIdentity));
-	{
-		physx::PxShape* shape = mPhysics->createShape(physx::PxBoxGeometry(0.5f, 0.5f, 0.5f), &materialPtr, 1, true, shapeFlags);
-		link->attachShape(*shape);
-		shape->release();
-	}
-	//physx::PxRigidActorExt::createExclusiveShape(*rootLinkRigidDynamicArm, physx::PxBoxGeometry(0.5f, 0.5f, 0.5f), *materialPtr);
-	//physx::PxRigidBodyExt::updateMassAndInertia(*rootLinkRigidDynamicArm, 1.0f);
-
-	/// Connect the links
-	physx::PxArticulationJointReducedCoordinate* aJoint = link->getInboundJoint();
-	aJoint->setParentPose(physx::PxTransform(physx::PxIdentity));
-	aJoint->setChildPose(physx::PxTransform(physx::PxVec3(1.f, 0.f, 0.f)));
-
-	/// Configure the joint type and motion, limited motion
-	aJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
-	aJoint->setMotion(physx::PxArticulationAxis::eTWIST, physx::PxArticulationMotion::eFREE);
-	physx::PxArticulationLimit limits;
-	limits.low = -physx::PxPiDivFour;
-	limits.high = physx::PxPiDivFour;
-	aJoint->setLimitParams(physx::PxArticulationAxis::eTWIST, limits);
-
-	/// Add joint drive
-	physx::PxArticulationDrive posDrive;
-	posDrive.stiffness = 0;
-	posDrive.damping = 0;
-	posDrive.maxForce = 0;
-	posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
-	/// Apply and Set targets (note the consistent axis)
-	aJoint->setDriveParams(physx::PxArticulationAxis::eTWIST, posDrive);
-	aJoint->setDriveVelocity(physx::PxArticulationAxis::eTWIST, 0.0f);
-	aJoint->setDriveTarget(physx::PxArticulationAxis::eTWIST, 0);
-
-	mScene->addArticulation(*articulation);
+	NewCreature->AddToScene(mScene);
 
 	/// ------------------------------------------
 	/// [END] ARTICULATIONS
@@ -364,26 +455,6 @@ ExampleApp::Run()
 			NewDynArmRotMat = mat4(vec4(xVec.x, xVec.y, xVec.z, 0), vec4(yVec.x, yVec.y, yVec.z, 0), vec4(zVec.x, zVec.y, zVec.z, 0), vec4(0, 0, 0, 1));
 		}
 
-		physx::PxVec3 artDynPos = rootLink->getGlobalPose().p;
-		mat4 artNewDynRotMat;
-		{
-			physx::PxQuat dynQuat = rootLink->getGlobalPose().q;
-			auto xVec = dynQuat.getBasisVector0();
-			auto yVec = dynQuat.getBasisVector1();
-			auto zVec = dynQuat.getBasisVector2();
-			artNewDynRotMat = mat4(vec4(xVec.x, xVec.y, xVec.z, 0), vec4(yVec.x, yVec.y, yVec.z, 0), vec4(zVec.x, zVec.y, zVec.z, 0), vec4(0, 0, 0, 1));
-		}
-
-		physx::PxVec3 artDynArmPos = link->getGlobalPose().p;
-		mat4 artNewDynArmRotMat;
-		{
-			physx::PxQuat dynArmQuat = link->getGlobalPose().q;
-			auto xVec = dynArmQuat.getBasisVector0();
-			auto yVec = dynArmQuat.getBasisVector1();
-			auto zVec = dynArmQuat.getBasisVector2();
-			artNewDynArmRotMat = mat4(vec4(xVec.x, xVec.y, xVec.z, 0), vec4(yVec.x, yVec.y, yVec.z, 0), vec4(zVec.x, zVec.y, zVec.z, 0), vec4(0, 0, 0, 1));
-		}
-
 		/// ---------------------------------------- 
 		/// [END] GET CUBE AND CUBE ARM POS AND ROT
 		/// ---------------------------------------- 
@@ -398,13 +469,13 @@ ExampleApp::Run()
 			rigidDynamic->addTorque({ -7, -5, 0 });
 
 		if (glfwGetKey(window->window, GLFW_KEY_F) == GLFW_PRESS)
-			rootLink->addForce({ 0, 25, 0 });
+			NewCreature->mRootPart->mLink->addForce({ 0, 45, 0 });
 
 		if (glfwGetKey(window->window, GLFW_KEY_G) == GLFW_PRESS)
-			rootLink->addTorque({ 7, 5, 0 });
+			NewCreature->mRootPart->mLink->addTorque({ 7, 5, 0 });
 
 		if (glfwGetKey(window->window, GLFW_KEY_H) == GLFW_PRESS)
-			rootLink->addTorque({ -7, -5, 0 });
+			NewCreature->mRootPart->mLink->addTorque({ -7, -5, 0 });
 
 		
 		cam.Update(window->window, deltaseconds);
@@ -428,8 +499,10 @@ ExampleApp::Run()
 		sphere.transform = translate(light.position) * scale(0.1);
 		cube.transform = translate(vec3(dynPos.x, dynPos.y, dynPos.z)) * NewDynRotMat * scale(0.5, 2.0, 0.5);
 		armCube.transform = translate(vec3(dynArmPos.x, dynArmPos.y, dynArmPos.z)) * NewDynArmRotMat * scale(0.5, 0.5, 0.5);
-		artCube.transform = translate(vec3(artDynPos.x, artDynPos.y, artDynPos.z)) * artNewDynRotMat * scale(0.5, 2.0, 0.5);
-		artArmCube.transform = translate(vec3(artDynArmPos.x, artDynArmPos.y, artDynArmPos.z)) * artNewDynArmRotMat * scale(0.5, 0.5, 0.5);
+		//artCube.transform = translate(vec3(artDynPos.x, artDynPos.y, artDynPos.z)) * artNewDynRotMat * scale(0.5, 2.0, 0.5);
+		//artArmCube.transform = translate(vec3(artDynArmPos.x, artDynArmPos.y, artDynArmPos.z)) * artNewDynArmRotMat * scale(0.5, 0.5, 0.5);
+
+		NewCreature->Update();
 		
 		mat4 view = cam.GetView();
 		mat4 viewProjection = projection * view;
@@ -466,8 +539,11 @@ ExampleApp::Run()
 		sphere.draw(viewProjection);
 		cube.draw(viewProjection);
 		armCube.draw(viewProjection);
-		artCube.draw(viewProjection);
-		artArmCube.draw(viewProjection);
+
+		NewCreature->Draw(viewProjection);
+		//NewCreature->mRootPart->Draw(viewProjection);
+		//NewCreature->mRootPart->mChildren[0]->Draw(viewProjection);
+
 		Quad.draw(viewProjection);
 
 		this->window->SwapBuffers();
