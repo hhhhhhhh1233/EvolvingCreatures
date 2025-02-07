@@ -586,12 +586,14 @@ public:
 };
 
 // Generates a simple quad centered around the origin
-static MeshResource CreateQuad(float width, float height)
+/// UV_SCALE is for scaling the texture, since I use a quad for the big ground plane I want the textured grid to repeat more often
+static MeshResource CreateQuad(float width, float height, float UV_SCALE = 1)
 {
 	unsigned int vertexBuffer = 0; 
 	unsigned int indexBuffer = 0;
 	unsigned int elementCount = 0;
 	unsigned int vertexArrayObject = 0;
+
 
 	float depth = 0;
 	GLfloat buf[] =
@@ -600,13 +602,13 @@ static MeshResource CreateQuad(float width, float height)
 		0, 0,										// UV
 		0, 0, -1,									// NORMAL
 		-width / 2,	height / 2,	depth,				// pos 1
-		0, 1,										// UV
+		0, 1 * UV_SCALE,										// UV
 		0, 0, -1,									// NORMAL
 		width / 2,	height / 2,	depth,				// pos 2
-		1, 1,										// UV
+		1 * UV_SCALE, 1 * UV_SCALE,										// UV
 		0, 0, -1,									// NORMAL
 		width / 2,	-height / 2,	depth,			// pos 3
-		1, 0,										// UV
+		1 * UV_SCALE, 0,										// UV
 		0, 0, -1,									// NORMAL
 	};
 

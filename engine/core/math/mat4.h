@@ -199,8 +199,17 @@ inline mat4 perspective(const float fovy, const float aspect, const float near, 
 				vec4(0, yScale, 0,0), 
 				vec4(0,0, (far + near)/nearmfar, -1), 
 				vec4(0,0,2*far*near/nearmfar, 0));
-
 }
+
+// Generates a perspective matrix based on certain parameters 
+inline mat4 ortho(float left, float right, float bottom, float top, const float near, const float far)
+{
+	return mat4(vec4(2/(right - left), 0, 0, 0),
+				vec4(0, 2/(top - bottom), 0, 0),
+				vec4(0,0, -2 / (far - near), 0), 
+				vec4(-(right + left)/(right - left), -(top + bottom)/(top - bottom), -(far + near)/(far - near), 1));
+}
+
 
 // Generates a matrix that rotates an object to look at a target
 inline mat4 lookat(const vec3& eye, const vec3& at, const vec3& up)

@@ -194,6 +194,66 @@ public:
 		mRootPart->AddBoxShape(Physics, Scale, Node);
 	}
 
+	CreaturePart* GetChildlessPart() const
+	{
+		CreaturePart* CurrentPart = mRootPart;
+
+		while (CurrentPart->mChildren.size() > 0)
+			CurrentPart = CurrentPart->mChildren[0];
+
+		return CurrentPart;
+	}
+
+	CreaturePart* GetRandomPart()
+	{
+		std::vector<CreaturePart*> Parts = GetAllParts();
+		return Parts[rand() % Parts.size()];
+	}
+
+	std::vector<CreaturePart*> GetAllParts()
+	{
+		return GetAllPartsFrom(mRootPart);
+	}
+
+	std::vector<CreaturePart*> GetAllPartsFrom(CreaturePart* Part)
+	{
+		std::vector<CreaturePart*> Parts;
+
+		if (Part->mChildren.size() == 0)
+		{
+			return { Part };
+		}
+
+		for (auto iPart : Part->mChildren)
+		{
+			std::vector<CreaturePart*> Children = GetAllPartsFrom(iPart);
+
+			for (auto ChildPart : Children)
+				Parts.push_back(ChildPart);
+		}
+
+		Parts.push_back(Part);
+
+		return Parts;
+	}
+
+	void AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node)
+	{
+		//CreaturePart* CurrentPart = mRootPart;
+
+		//const int ODDS_TO_ADD_PART = 20;
+
+		int RANDOM_MAX = 2;
+		vec3 RandomScale = vec3(((rand() % (RANDOM_MAX * 10)) / 10.0f) + 0.1, ((rand() % (RANDOM_MAX * 10)) / 10.0f) + 0.1, ((rand() % (RANDOM_MAX * 10)) / 10.0f) + 0.1);
+		vec3 RandomRelativePosition = vec3(((rand() % (RANDOM_MAX * 10)) / 10.0f), ((rand() % (RANDOM_MAX * 10)) / 10.0f), ((rand() % (RANDOM_MAX * 10)) / 10.0f));
+		GetRandomPart()->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, RandomScale, Node, RandomRelativePosition);
+
+		//if (rand() % 100 < ODDS_TO_ADD_PART)
+		//	std::cout << "Lucky! You're in the lucky 20%\n";
+		//else
+		//	std::cout << "Unlucky... You're in the unlucky 80%\n";
+	}
+
 	void AddToScene(physx::PxScene* Scene)
 	{
 		Scene->addArticulation(*mArticulation);
@@ -214,6 +274,7 @@ public:
 void
 ExampleApp::Run()
 {
+	srand(time(NULL));
 	/// ---------------------------------------- 
 	/// [BEGIN] SHADOW MAPPING
 	/// ---------------------------------------- 
@@ -249,6 +310,9 @@ ExampleApp::Run()
 	TextureResource gridTexture;
 	gridTexture.LoadFromFile(FILE_ROOT "images\\Grid.jpg");
 
+	TextureResource gridArtTexture;
+	gridArtTexture.LoadFromFile(FILE_ROOT "images\\Grid2.png");
+
 	TextureResource defaultTexture;
 	defaultTexture.LoadFromFile(FILE_ROOT "images\\default.png");
 
@@ -258,22 +322,22 @@ ExampleApp::Run()
 	std::shared_ptr<ShaderResource> lightingShader = std::make_shared<ShaderResource>();
 	lightingShader->LoadShaders(FILE_ROOT "Shaders\\lightingShader.vert", FILE_ROOT "Shaders\\lightingShader.frag");
 
+	std::shared_ptr<ShaderResource> simpleDepthShader = std::make_shared<ShaderResource>();
+	simpleDepthShader->LoadShaders(FILE_ROOT "Shaders\\simpleDepthShader.vert", FILE_ROOT "Shaders\\simpleDepthShader.frag");
+
 	MeshResource sphereMesh;
 	sphereMesh.LoadOBJ(FILE_ROOT "objs\\sphere.obj");
 
 	GraphicsNode sphere = GraphicsNode(std::make_shared<MeshResource>(std::move(sphereMesh)), std::make_shared<TextureResource>(gridTexture), shader, mat4(), 32);
 
-	//GraphicsNode helmet = LoadGLTF(FILE_ROOT "glTFs\\DamagedHelmetglTF\\", "DamagedHelmet.gltf", shader);
-	//GraphicsNode avocado = LoadGLTF(FILE_ROOT "glTFs\\AvocadoglTF\\", "Avocado.gltf", shader);
 	GraphicsNode cube = LoadGLTF(FILE_ROOT "glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridTexture));
 	GraphicsNode armCube = LoadGLTF(FILE_ROOT "glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridTexture));
 
-	GraphicsNode artCube = LoadGLTF(FILE_ROOT "glTFs\\CubeglTF\\", "Cube.gltf", lightingShader);
-	GraphicsNode artArmCube = LoadGLTF(FILE_ROOT "glTFs\\CubeglTF\\", "Cube.gltf", lightingShader);
-	//GraphicsNode normalTangentMirrorTest = LoadGLTF(FILE_ROOT "glTFs\\NormalTangentMirrorTestglTF\\", "NormalTangentMirrorTest.gltf", shader);
-	GraphicsNode Quad(std::make_shared<MeshResource>(CreateQuad(30, 30)), std::make_shared<TextureResource>(defaultTexture), lightingShader, rotationx(3.14/2), 1);
+	GraphicsNode artCube = LoadGLTF(FILE_ROOT "glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridArtTexture));
+	GraphicsNode Quad(std::make_shared<MeshResource>(CreateQuad(300, 300, 50)), std::make_shared<TextureResource>(defaultTexture), lightingShader, rotationx(3.14/2), 1);
 	
-	mat4 projection = perspective(3.14f / 2, window->GetAspectRatio(), 0.1f, 100);
+	mat4 projection = perspective(3.14f / 2, window->GetAspectRatio(), 0.1f, 1000);
+	mat4 lightProjection = ortho(-10, 10, -10, 10, 0.1f, 1000);
 	
 	Camera cam;
 	cam.position = vec3(0, 1, 3);
@@ -394,10 +458,20 @@ ExampleApp::Run()
 	/// ----------------------------------------
 
 	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(0.5f, 2.5f, 0.5f));
-	NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(1,0,0));
-	NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(-1,0,0));
-	NewCreature->mRootPart->mChildren[1]->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(-1, 0, 0));
-	NewCreature->mRootPart->mChildren[1]->mChildren[0]->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(-1, 0, 0));
+	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+	//NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(1,0,0));
+	//NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(-1,0,0));
+	//NewCreature->GetChildlessPart()->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(1, 0, 0));
+	//NewCreature->GetChildlessPart()->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(1, 0, 0));
+	//NewCreature->GetChildlessPart()->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(1, 0, 0));
+	//NewCreature->GetChildlessPart()->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(1, 0, 0));
+
+	auto PartArr = NewCreature->GetAllParts();
+	std::cout << "The creature has " << PartArr.size() << " parts.\n";
 
 	NewCreature->AddToScene(mScene);
 
@@ -499,13 +573,15 @@ ExampleApp::Run()
 		sphere.transform = translate(light.position) * scale(0.1);
 		cube.transform = translate(vec3(dynPos.x, dynPos.y, dynPos.z)) * NewDynRotMat * scale(0.5, 2.0, 0.5);
 		armCube.transform = translate(vec3(dynArmPos.x, dynArmPos.y, dynArmPos.z)) * NewDynArmRotMat * scale(0.5, 0.5, 0.5);
-		//artCube.transform = translate(vec3(artDynPos.x, artDynPos.y, artDynPos.z)) * artNewDynRotMat * scale(0.5, 2.0, 0.5);
-		//artArmCube.transform = translate(vec3(artDynArmPos.x, artDynArmPos.y, artDynArmPos.z)) * artNewDynArmRotMat * scale(0.5, 0.5, 0.5);
 
 		NewCreature->Update();
 		
 		mat4 view = cam.GetView();
 		mat4 viewProjection = projection * view;
+
+		/// For Shadow Mapping
+		mat4 lightView = lookat(vec3(-2, 4, -1), vec3(0, 0, 0), vec3(0, 1, 0));
+		mat4 lightSpaceMatrix = lightProjection * lightView;
 		
 		shader->UseProgram();
 		shader->SetVec3("viewPos", cam.position);
@@ -522,11 +598,10 @@ ExampleApp::Run()
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 			glClear(GL_DEPTH_BUFFER_BIT);
-			cube.draw(viewProjection);
-			armCube.draw(viewProjection);
-			artCube.draw(viewProjection);
-			artArmCube.draw(viewProjection);
-			Quad.draw(viewProjection);
+			cube.draw(lightSpaceMatrix);
+			armCube.draw(lightSpaceMatrix);
+			NewCreature->Draw(lightSpaceMatrix);
+			Quad.draw(lightSpaceMatrix);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
