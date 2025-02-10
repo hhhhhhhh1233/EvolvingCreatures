@@ -6,43 +6,40 @@ class Camera
 {
 public:
 	/// BASIC CAMERA PROPERTIES
-	vec3 position;
-	vec3 target;
-	vec3 up;
-	float yaw, pitch;
+	vec3 mPosition;
+	vec3 mTarget;
+	vec3 mUp;
 
 	/// CONTROLLABLE CAMERA MOVEMENT PROPERTIES
-	const float DEFAULT_SPEED = 6.0;
-	const float MIN_SPEED = 0.1;
-	const float MAX_SPEED = 30;
-	const float SPEED_DELTA = 0.1;
+	const float REGULAR_SPEED = 10;
+	const float INCREASED_SPEED = 30;
 
 	const float verticalLimit = 3.14/2; /// How many radians up or down the camera can move
-	float speed = DEFAULT_SPEED;
-	float mouseSpeed = 0.5;
-	double horizontalAngle = 3.141592;
-	double verticalAngle = 0;
+	float mCurrentSpeed = REGULAR_SPEED;
+	float mMouseSpeed = 0.5;
+	double mHorizontalAngle = 3.141592;
+	double mVerticalAngle = 0;
 	bool bFirstPress = true;
 	double xOldPos, yOldPos;
 
 
 	Camera()
 	{
-		position = vec3(0, 0, 0);
-		target = vec3(0, 0, 0);
-		up = vec3(0, 1, 0);
+		mPosition = vec3(0, 0, 0);
+		mTarget = vec3(0, 0, 0);
+		mUp = vec3(0, 1, 0);
 	}
 
 	Camera(vec3 CameraPosition, vec3 CameraTarget, vec3 Up)
 	{
-		position = CameraPosition;
-		target = CameraTarget;
-		up = Up;
+		mPosition = CameraPosition;
+		mTarget = CameraTarget;
+		mUp = Up;
 	}
 
 	mat4 GetView()
 	{
-		return lookat(position, target, up);
+		return lookat(mPosition, mTarget, mUp);
 	}
 
 	void Update(GLFWwindow* window, float deltaseconds)
@@ -62,10 +59,10 @@ public:
 			}
 			glfwGetCursorPos(window, &xpos, &ypos);
 
-			horizontalAngle += deltaseconds * mouseSpeed * (300 - xpos);
-			verticalAngle += deltaseconds * mouseSpeed * (300 - ypos);
-			verticalAngle = verticalAngle > verticalLimit ? verticalLimit : verticalAngle;
-			verticalAngle = verticalAngle < -verticalLimit ? -verticalLimit : verticalAngle;
+			mHorizontalAngle += deltaseconds * mMouseSpeed * (300 - xpos);
+			mVerticalAngle += deltaseconds * mMouseSpeed * (300 - ypos);
+			mVerticalAngle = mVerticalAngle > verticalLimit ? verticalLimit : mVerticalAngle;
+			mVerticalAngle = mVerticalAngle < -verticalLimit ? -verticalLimit : mVerticalAngle;
 
 			glfwSetCursorPos(window, 300, 300);
 		}
@@ -80,36 +77,26 @@ public:
 			bFirstPress = true;
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-		{
-			speed -= SPEED_DELTA;
-			speed = speed < MIN_SPEED ? MIN_SPEED : speed;
-			//std::cout << "Speed is " << speed << "\n";
-		}
-		else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-		{
-			speed += SPEED_DELTA;
-			speed = speed > MAX_SPEED ? MAX_SPEED : speed;
-			//std::cout << "Speed is " << speed << "\n";
-		}
-		else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-		{
-			speed = DEFAULT_SPEED;
-			//std::cout << "Speed is " << speed << "\n";
-		}
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+			mCurrentSpeed = INCREASED_SPEED;
+		else
+			mCurrentSpeed = REGULAR_SPEED;
 
 		/// MOVE THE CAMERA POSITION
 		bool bPressLeft = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
 		bool bPressRight = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
 		bool bPressForward = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
 		bool bPressBack = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
-		bool bPressUp = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
-		bool bPressDown = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+		bool bPressUp = glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS;
+		bool bPressDown = glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS;
 
-		position += normalize(target - position) * deltaseconds * speed * (int(bPressForward) - int(bPressBack));
-		position += normalize(cross(normalize(target - position), vec3(0, 1, 0))) * deltaseconds * speed * (int(bPressRight) - int(bPressLeft));
-		position.y += deltaseconds * speed * (int(bPressUp) - int(bPressDown));
+		mPosition += normalize(mTarget - mPosition) * deltaseconds * mCurrentSpeed * (int(bPressForward) - int(bPressBack));
+		mPosition += normalize(cross(normalize(mTarget - mPosition), vec3(0, 1, 0))) * deltaseconds * mCurrentSpeed * (int(bPressRight) - int(bPressLeft));
+		mPosition.y += deltaseconds * mCurrentSpeed * (int(bPressUp) - int(bPressDown));
 
-		target = position + vec3(cos(verticalAngle) * sin(horizontalAngle), sin(verticalAngle), cos(verticalAngle) * cos(horizontalAngle));
+		if (mPosition.y < 0.2)
+			mPosition.y = 0.2;
+
+		mTarget = mPosition + vec3(cos(mVerticalAngle) * sin(mHorizontalAngle), sin(mVerticalAngle), cos(mVerticalAngle) * cos(mHorizontalAngle));
 	}
 };

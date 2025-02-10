@@ -148,7 +148,7 @@ ExampleApp::Run()
 	mat4 lightProjection = ortho(-10, 10, -10, 10, 0.1f, 1000);
 	
 	Camera cam;
-	cam.position = vec3(0, 1, 3);
+	cam.mPosition = vec3(0, 1, 3);
 
 	/// ------------------------------------------
 	/// [BEGIN] LIGHT SETUP
@@ -384,10 +384,10 @@ ExampleApp::Run()
 		mat4 lightSpaceMatrix = lightProjection * lightView;
 		
 		shader->UseProgram();
-		shader->SetVec3("viewPos", cam.position);
+		shader->SetVec3("viewPos", cam.mPosition);
 
 		lightingShader->UseProgram();
-		lightingShader->SetVec3("viewPos", cam.position);
+		lightingShader->SetVec3("viewPos", cam.mPosition);
 
 		sphere.draw(viewProjection);
 
