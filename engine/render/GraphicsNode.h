@@ -49,7 +49,7 @@ public:
 
 };
 
-GraphicsNode LoadGLTF(std::string directory, std::string file, std::shared_ptr<ShaderResource> Shader, std::shared_ptr<TextureResource> Texture = nullptr) {
+static GraphicsNode LoadGLTF(std::string directory, std::string file, std::shared_ptr<ShaderResource> Shader, std::shared_ptr<TextureResource> Texture = nullptr) {
 	GraphicsNode node;
 	
 	fx::gltf::Document obj;

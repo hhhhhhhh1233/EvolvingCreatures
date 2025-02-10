@@ -10,6 +10,7 @@ SET(files_render_display
 	MeshResource.h
 	camera.h
 	TextureResource.h
+	TextureResource.cc
 	stb_image.h
 	ShaderResource.h
 	GraphicsNode.h

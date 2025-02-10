@@ -15,6 +15,7 @@
 #include <pvd/PxPvd.h>
 #include <pvd/PxPvdTransport.h>
 #include <pvd/PxPvdSceneClient.h>
+#include "Creature.h"
 
 #define FILE_ROOT "C:\\Users\\tagtje-1\\Documents\\EvolvingCreatures\\ProjectFiles\\"
 
@@ -78,199 +79,6 @@ ExampleApp::Close()
 //------------------------------------------------------------------------------
 /**
 */
-
-class CreaturePart
-{
-public:
-	physx::PxArticulationLink* mLink;
-	physx::PxMaterial* mPhysicsMaterial;
-	physx::PxShapeFlags mShapeFlags;
-	physx::PxArticulationJointReducedCoordinate* mJoint;
-	
-	std::vector<CreaturePart*> mChildren;
-
-	GraphicsNode mNode;
-	vec3 mScale;
-
-	CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags) : mPhysicsMaterial(PhysicsMaterial), mShapeFlags(ShapeFlags)
-	{
-
-	}
-
-	void AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node)
-	{
-		physx::PxShape* shape = Physics->createShape(physx::PxBoxGeometry({Scale.x, Scale.y, Scale.z}), &mPhysicsMaterial, 1, true, mShapeFlags);
-		mLink->attachShape(*shape);
-		shape->release();
-		mScale = Scale;
-		mNode = Node;
-	}
-
-	void AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
-		physx::PxShapeFlags ShapeFlags, vec3 Scale, GraphicsNode Node, vec3 RelativePosition)
-	{
-		CreaturePart* NewPart = new CreaturePart(PhysicsMaterial, ShapeFlags);
-		NewPart->mLink = Articulation->createLink(mLink, physx::PxTransform(physx::PxIdentity));
-		NewPart->AddBoxShape(Physics, Scale, Node);
-
-		NewPart->mJoint = NewPart->mLink->getInboundJoint();
-		NewPart->mJoint->setParentPose(physx::PxTransform(physx::PxIdentity));
-		NewPart->mJoint->setChildPose(physx::PxTransform({RelativePosition.x, RelativePosition.y, RelativePosition.z}));
-
-		NewPart->ConfigureJoint();
-		
-		mChildren.push_back(NewPart);
-	}
-
-	/// TODO: Add options to this for different styled joints
-	/// PosDrive should probably be a parameter
-	void ConfigureJoint()
-	{
-		/// Configure the joint type and motion, limited motion
-		mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
-		mJoint->setMotion(physx::PxArticulationAxis::eTWIST, physx::PxArticulationMotion::eFREE);
-		physx::PxArticulationLimit limits;
-		limits.low = -physx::PxPiDivFour;
-		limits.high = physx::PxPiDivFour;
-		mJoint->setLimitParams(physx::PxArticulationAxis::eTWIST, limits);
-
-		/// Add joint drive
-		physx::PxArticulationDrive posDrive;
-		posDrive.stiffness = 0;
-		posDrive.damping = 0;
-		posDrive.maxForce = 0;
-		posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
-
-		/// Apply and Set targets (note the consistent axis)
-		mJoint->setDriveParams(physx::PxArticulationAxis::eTWIST, posDrive);
-		mJoint->setDriveVelocity(physx::PxArticulationAxis::eTWIST, 0.0f);
-		mJoint->setDriveTarget(physx::PxArticulationAxis::eTWIST, 0);
-	}
-
-	void Update()
-	{
-		physx::PxVec3 Pos = mLink->getGlobalPose().p;
-		vec3 Position(Pos.x, Pos.y, Pos.z);
-
-		mat4 RotMat;
-		{
-			physx::PxQuat dynQuat = mLink->getGlobalPose().q;
-			auto xVec = dynQuat.getBasisVector0();
-			auto yVec = dynQuat.getBasisVector1();
-			auto zVec = dynQuat.getBasisVector2();
-			RotMat = mat4(vec4(xVec.x, xVec.y, xVec.z, 0), vec4(yVec.x, yVec.y, yVec.z, 0), vec4(zVec.x, zVec.y, zVec.z, 0), vec4(0, 0, 0, 1));
-		}
-
-		mNode.transform = translate(Position) * RotMat * scale(mScale.x, mScale.y, mScale.z);
-
-		for (auto Child : mChildren)
-			Child->Update();
-	}
-
-	void Draw(mat4 ViewProjection)
-	{
-		mNode.draw(ViewProjection);
-
-		for (auto Child : mChildren)
-			Child->Draw(ViewProjection);
-	}
-};
-
-class Creature
-{
-public:
-	physx::PxArticulationReducedCoordinate* mArticulation;
-	CreaturePart* mRootPart;
-	
-	Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale)
-	{
-		mArticulation = Physics->createArticulationReducedCoordinate();
-		mArticulation->setArticulationFlag(physx::PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
-
-		//mRootPart = new CreaturePart(this, PhysicsMaterial, ShapeFlags);
-		mRootPart = new CreaturePart(PhysicsMaterial, ShapeFlags);
-		mRootPart->mLink = mArticulation->createLink(NULL, physx::PxTransform(physx::PxIdentity));
-
-		mRootPart->AddBoxShape(Physics, Scale, Node);
-	}
-
-	CreaturePart* GetChildlessPart() const
-	{
-		CreaturePart* CurrentPart = mRootPart;
-
-		while (CurrentPart->mChildren.size() > 0)
-			CurrentPart = CurrentPart->mChildren[0];
-
-		return CurrentPart;
-	}
-
-	CreaturePart* GetRandomPart()
-	{
-		std::vector<CreaturePart*> Parts = GetAllParts();
-		return Parts[rand() % Parts.size()];
-	}
-
-	std::vector<CreaturePart*> GetAllParts()
-	{
-		return GetAllPartsFrom(mRootPart);
-	}
-
-	std::vector<CreaturePart*> GetAllPartsFrom(CreaturePart* Part)
-	{
-		std::vector<CreaturePart*> Parts;
-
-		if (Part->mChildren.size() == 0)
-		{
-			return { Part };
-		}
-
-		for (auto iPart : Part->mChildren)
-		{
-			std::vector<CreaturePart*> Children = GetAllPartsFrom(iPart);
-
-			for (auto ChildPart : Children)
-				Parts.push_back(ChildPart);
-		}
-
-		Parts.push_back(Part);
-
-		return Parts;
-	}
-
-	void AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node)
-	{
-		//CreaturePart* CurrentPart = mRootPart;
-
-		//const int ODDS_TO_ADD_PART = 20;
-
-		int RANDOM_MAX = 2;
-		vec3 RandomScale = vec3(((rand() % (RANDOM_MAX * 10)) / 10.0f) + 0.1, ((rand() % (RANDOM_MAX * 10)) / 10.0f) + 0.1, ((rand() % (RANDOM_MAX * 10)) / 10.0f) + 0.1);
-		vec3 RandomRelativePosition = vec3(((rand() % (RANDOM_MAX * 10)) / 10.0f), ((rand() % (RANDOM_MAX * 10)) / 10.0f), ((rand() % (RANDOM_MAX * 10)) / 10.0f));
-		GetRandomPart()->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, RandomScale, Node, RandomRelativePosition);
-
-		//if (rand() % 100 < ODDS_TO_ADD_PART)
-		//	std::cout << "Lucky! You're in the lucky 20%\n";
-		//else
-		//	std::cout << "Unlucky... You're in the unlucky 80%\n";
-	}
-
-	void AddToScene(physx::PxScene* Scene)
-	{
-		Scene->addArticulation(*mArticulation);
-	}
-
-	void Update()
-	{
-		mRootPart->Update();
-	}
-
-	void Draw(mat4 ViewProjection)
-	{
-		mRootPart->Draw(ViewProjection);
-	}
-};
-
-
 void
 ExampleApp::Run()
 {
@@ -384,7 +192,7 @@ ExampleApp::Run()
 
 	bool bRecordMemoryAllocation = true;
 	mPvd = physx::PxCreatePvd(*mFoundation);
-	physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("THIS IS WRONG", 5425, 10);
+	physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
 	mPvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
 
 	mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, physx::PxTolerancesScale(), bRecordMemoryAllocation, mPvd);
@@ -457,18 +265,9 @@ ExampleApp::Run()
 	/// [BEGIN] ARTICULATIONS
 	/// ----------------------------------------
 
-	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(0.5f, 2.5f, 0.5f));
+	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(0.5f, 0.5f, 0.5f));
 	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-	//NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(1,0,0));
-	//NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(-1,0,0));
-	//NewCreature->GetChildlessPart()->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(1, 0, 0));
-	//NewCreature->GetChildlessPart()->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(1, 0, 0));
-	//NewCreature->GetChildlessPart()->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artCube, vec3(1, 0, 0));
-	//NewCreature->GetChildlessPart()->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, vec3(0.5f, 0.5f, 0.5f), artArmCube, vec3(1, 0, 0));
+
 
 	auto PartArr = NewCreature->GetAllParts();
 	std::cout << "The creature has " << PartArr.size() << " parts.\n";
@@ -497,6 +296,7 @@ ExampleApp::Run()
 		mAccumulator += deltaseconds;
 		if (mAccumulator > mStepSize)
 		{
+			NewCreature->GetChildlessPart()->Activate(30);
 			mScene->simulate(mStepSize);
 			mScene->fetchResults(true);
 
