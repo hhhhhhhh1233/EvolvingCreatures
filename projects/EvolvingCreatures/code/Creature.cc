@@ -95,6 +95,17 @@ void Creature::Update()
 	mRootPart->Update();
 }
 
+void Creature::Activate(float Force)
+{
+	std::vector<CreaturePart*> Parts = GetAllParts();
+	for (auto& Part : Parts)
+	{
+		/// NOTE: This check exists since the root node does not have a joint, all other parts should absolutely have joints though
+		if (Part->mJoint != nullptr)
+			Part->Activate(Force);
+	}
+}
+
 void Creature::Draw(mat4 ViewProjection)
 {
 	mRootPart->Draw(ViewProjection);

@@ -18,5 +18,6 @@ public:
 	void AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node);
 	void AddToScene(physx::PxScene* Scene);
 	void Update();
+	void Activate(float Force);
 	void Draw(mat4 ViewProjection);
 };

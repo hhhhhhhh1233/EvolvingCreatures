@@ -231,52 +231,23 @@ ExampleApp::Run()
 	physx::PxShapeFlags shapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
 	physx::PxMaterial* materialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
 
-	physx::PxRigidStatic* rigidStatic = mPhysics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
+	physx::PxRigidStatic* PlaneCollision = mPhysics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
 	{
 		physx::PxShape* shape = mPhysics->createShape(physx::PxPlaneGeometry(), &materialPtr, 1, true, shapeFlags);
-		rigidStatic->attachShape(*shape);
+		PlaneCollision->attachShape(*shape);
 		shape->release();
 	}
 
-	physx::PxRigidDynamic* rigidDynamic = mPhysics->createRigidDynamic(physx::PxTransform(physx::PxVec3(0.f, 5.5f, 0.f)));
-	{
-		physx::PxShape* shape = mPhysics->createShape(physx::PxBoxGeometry(0.5f, 2.f, 0.5f), &materialPtr, 1, true, shapeFlags);
-		rigidDynamic->attachShape(*shape);
-		shape->release();
-	}
 
-	physx::PxRigidDynamic* rigidDynamicArm = mPhysics->createRigidDynamic(physx::PxTransform(physx::PxVec3(1.f, 5.5f, 0.f)));
-	{
-		physx::PxShape* shape = mPhysics->createShape(physx::PxBoxGeometry(0.5f, 0.5f, 0.5f), &materialPtr, 1, true, shapeFlags);
-		rigidDynamicArm->attachShape(*shape);
-		shape->release();
-	}
-
-	mScene->addActor(*rigidStatic);
-	mScene->addActor(*rigidDynamic);
-	mScene->addActor(*rigidDynamicArm);
-
-	physx::PxRevoluteJoint* joint = physx::PxRevoluteJointCreate(*mPhysics, rigidDynamic, physx::PxTransform(physx::PxIdentity), rigidDynamicArm,physx::PxTransform(physx::PxVec3(1.f, 0.0f, 0.f)));
-
-	//joint->setLimit(physx::PxJointAngularLimitPair(-physx::PxPi / 4, physx::PxPi / 4));
-	joint->setRevoluteJointFlag(physx::PxRevoluteJointFlag::eDRIVE_FREESPIN, true);
-
-	/// ----------------------------------------
-	/// [BEGIN] ARTICULATIONS
-	/// ----------------------------------------
-
-	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(0.5f, 0.5f, 0.5f));
+	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
 	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-
+	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 
 	auto PartArr = NewCreature->GetAllParts();
 	std::cout << "The creature has " << PartArr.size() << " parts.\n";
 
+	mScene->addActor(*PlaneCollision);
 	NewCreature->AddToScene(mScene);
-
-	/// ------------------------------------------
-	/// [END] ARTICULATIONS
-	/// ------------------------------------------
 
 	/// ------------------------------------------
 	/// [END] CREATE ACTORS
@@ -296,61 +267,20 @@ ExampleApp::Run()
 		mAccumulator += deltaseconds;
 		if (mAccumulator > mStepSize)
 		{
-			NewCreature->GetChildlessPart()->Activate(30);
+			NewCreature->Activate(10 * sin(5 * (std::chrono::duration_cast<std::chrono::milliseconds>(end - appStart).count() / 1000.0f)));
+
 			mScene->simulate(mStepSize);
 			mScene->fetchResults(true);
 
 			mAccumulator -= mStepSize;
 		}
-
-		/// ---------------------------------------- 
-		/// [BEGIN] GET CUBE AND CUBE ARM POS AND ROT
-		/// ---------------------------------------- 
-
-		/// I couldn't figure out a better way to get the rotation out of PhysX
-		physx::PxVec3 dynPos = rigidDynamic->getGlobalPose().p;
-		mat4 NewDynRotMat;
-		{
-			physx::PxQuat dynQuat = rigidDynamic->getGlobalPose().q;
-			auto xVec = dynQuat.getBasisVector0();
-			auto yVec = dynQuat.getBasisVector1();
-			auto zVec = dynQuat.getBasisVector2();
-			NewDynRotMat = mat4(vec4(xVec.x, xVec.y, xVec.z, 0), vec4(yVec.x, yVec.y, yVec.z, 0), vec4(zVec.x, zVec.y, zVec.z, 0), vec4(0, 0, 0, 1));
-		}
-
-		/// I couldn't figure out a better way to get the rotation out of PhysX
-		physx::PxVec3 dynArmPos = rigidDynamicArm->getGlobalPose().p;
-		mat4 NewDynArmRotMat;
-		{
-			physx::PxQuat dynArmQuat = rigidDynamicArm->getGlobalPose().q;
-			auto xVec = dynArmQuat.getBasisVector0();
-			auto yVec = dynArmQuat.getBasisVector1();
-			auto zVec = dynArmQuat.getBasisVector2();
-			NewDynArmRotMat = mat4(vec4(xVec.x, xVec.y, xVec.z, 0), vec4(yVec.x, yVec.y, yVec.z, 0), vec4(zVec.x, zVec.y, zVec.z, 0), vec4(0, 0, 0, 1));
-		}
-
-		/// ---------------------------------------- 
-		/// [END] GET CUBE AND CUBE ARM POS AND ROT
-		/// ---------------------------------------- 
-
-		if (glfwGetKey(window->window, GLFW_KEY_R) == GLFW_PRESS)
-			rigidDynamic->addForce({ 0, 25, 0 });
-
-		if (glfwGetKey(window->window, GLFW_KEY_T) == GLFW_PRESS)
-			rigidDynamic->addTorque({ 7, 5, 0 });
-
-		if (glfwGetKey(window->window, GLFW_KEY_Y) == GLFW_PRESS)
-			rigidDynamic->addTorque({ -7, -5, 0 });
+		physx::PxVec3 CreatureVel = NewCreature->mRootPart->mLink->getLinearVelocity();
+		//std::cout << CreatureVel.x << ", " << CreatureVel.y << ", " << CreatureVel.z << "\n";
+		vec3 CreatureHorizontalVel = vec3(CreatureVel.x, 0, CreatureVel.z);
+		std::cout << "Creature Velocity: " << length(CreatureHorizontalVel) << "\n";
 
 		if (glfwGetKey(window->window, GLFW_KEY_F) == GLFW_PRESS)
 			NewCreature->mRootPart->mLink->addForce({ 0, 45, 0 });
-
-		if (glfwGetKey(window->window, GLFW_KEY_G) == GLFW_PRESS)
-			NewCreature->mRootPart->mLink->addTorque({ 7, 5, 0 });
-
-		if (glfwGetKey(window->window, GLFW_KEY_H) == GLFW_PRESS)
-			NewCreature->mRootPart->mLink->addTorque({ -7, -5, 0 });
-
 		
 		cam.Update(window->window, deltaseconds);
 
@@ -371,8 +301,6 @@ ExampleApp::Run()
 		sun.UpdateShader(&*lightingShader);
 		
 		sphere.transform = translate(light.position) * scale(0.1);
-		cube.transform = translate(vec3(dynPos.x, dynPos.y, dynPos.z)) * NewDynRotMat * scale(0.5, 2.0, 0.5);
-		armCube.transform = translate(vec3(dynArmPos.x, dynArmPos.y, dynArmPos.z)) * NewDynArmRotMat * scale(0.5, 0.5, 0.5);
 
 		NewCreature->Update();
 		
@@ -398,8 +326,6 @@ ExampleApp::Run()
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 			glClear(GL_DEPTH_BUFFER_BIT);
-			cube.draw(lightSpaceMatrix);
-			armCube.draw(lightSpaceMatrix);
 			NewCreature->Draw(lightSpaceMatrix);
 			Quad.draw(lightSpaceMatrix);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -412,8 +338,6 @@ ExampleApp::Run()
 		/// ----------------------------------------
 
 		sphere.draw(viewProjection);
-		cube.draw(viewProjection);
-		armCube.draw(viewProjection);
 
 		NewCreature->Draw(viewProjection);
 		//NewCreature->mRootPart->Draw(viewProjection);

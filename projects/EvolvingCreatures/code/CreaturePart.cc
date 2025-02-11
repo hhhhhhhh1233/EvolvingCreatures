@@ -22,7 +22,8 @@ void CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticulationRedu
 	NewPart->AddBoxShape(Physics, Scale, Node);
 
 	NewPart->mJoint = NewPart->mLink->getInboundJoint();
-	NewPart->mJoint->setParentPose(physx::PxTransform({ParentPosition.x, ParentPosition.y, ParentPosition.z}));
+	//NewPart->mJoint->setParentPose(physx::PxTransform({ParentPosition.x, ParentPosition.y, ParentPosition.z}));
+	NewPart->mJoint->setParentPose(physx::PxTransform(physx::PxIdentity));
 	NewPart->mJoint->setChildPose(physx::PxTransform({RelativePosition.x, RelativePosition.y, RelativePosition.z}));
 
 	NewPart->ConfigureJoint();
@@ -36,7 +37,7 @@ void CreaturePart::ConfigureJoint()
 {
 	/// Configure the joint type and motion, limited motion
 	mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
-	mJoint->setMotion(physx::PxArticulationAxis::eSWING2, physx::PxArticulationMotion::eLIMITED);
+	mJoint->setMotion(physx::PxArticulationAxis::eSWING2, physx::PxArticulationMotion::eFREE);
 	physx::PxArticulationLimit limits;
 	limits.low = -physx::PxPiDivFour;
 	limits.high = physx::PxPiDivFour;
@@ -44,15 +45,15 @@ void CreaturePart::ConfigureJoint()
 
 	/// Add joint drive
 	physx::PxArticulationDrive posDrive;
-	posDrive.stiffness = 0;
-	posDrive.damping = 0;
-	posDrive.maxForce = 0;
+	posDrive.stiffness = 100;
+	posDrive.damping = 10;
+	posDrive.maxForce = 1000;
 	posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
 
 	/// Apply and Set targets (note the consistent axis)
 	mJoint->setDriveParams(physx::PxArticulationAxis::eSWING2, posDrive);
-	mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, 0.0f);
-	mJoint->setDriveTarget(physx::PxArticulationAxis::eSWING2, 0);
+	//mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, 0.0f);
+	//mJoint->setDriveTarget(physx::PxArticulationAxis::eSWING2, 0);
 }
 
 void CreaturePart::Activate(float Force)
@@ -60,8 +61,7 @@ void CreaturePart::Activate(float Force)
 	/// Torque doesn't get the physicality that I want
 	//mLink->addTorque({ 0, 0, Force });
 
-	//mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, Force);
-	//mJoint->setArmature(physx::PxArticulationAxis::eSWING2, Force);
+	mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, Force);
 }
 
 void CreaturePart::Update()

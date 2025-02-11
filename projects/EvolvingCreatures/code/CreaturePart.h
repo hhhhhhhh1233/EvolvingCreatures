@@ -7,10 +7,10 @@
 class CreaturePart
 {
 public:
-	physx::PxArticulationLink* mLink;
-	physx::PxMaterial* mPhysicsMaterial;
+	physx::PxArticulationLink* mLink = nullptr;
+	physx::PxMaterial* mPhysicsMaterial = nullptr;
 	physx::PxShapeFlags mShapeFlags;
-	physx::PxArticulationJointReducedCoordinate* mJoint;
+	physx::PxArticulationJointReducedCoordinate* mJoint = nullptr;
 	
 	std::vector<CreaturePart*> mChildren;
 
