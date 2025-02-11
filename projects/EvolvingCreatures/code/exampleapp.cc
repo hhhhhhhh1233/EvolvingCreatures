@@ -240,6 +240,7 @@ ExampleApp::Run()
 
 
 	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
+	NewCreature->SetPosition(vec3(0, 10, 0));
 	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 

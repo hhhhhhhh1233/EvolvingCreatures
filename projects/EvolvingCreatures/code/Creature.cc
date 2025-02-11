@@ -85,6 +85,11 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	//	std::cout << "Unlucky... You're in the unlucky 80%\n";
 }
 
+void Creature::SetPosition(vec3 Position)
+{
+	mArticulation->setRootGlobalPose(physx::PxTransform(physx::PxVec3(Position.x, Position.y, Position.z)));
+}
+
 void Creature::AddToScene(physx::PxScene* Scene)
 {
 	Scene->addArticulation(*mArticulation);
