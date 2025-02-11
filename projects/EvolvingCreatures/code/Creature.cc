@@ -95,14 +95,14 @@ void Creature::Update()
 	mRootPart->Update();
 }
 
-void Creature::Activate(float Force)
+void Creature::Activate(float NewVel)
 {
 	std::vector<CreaturePart*> Parts = GetAllParts();
 	for (auto& Part : Parts)
 	{
 		/// NOTE: This check exists since the root node does not have a joint, all other parts should absolutely have joints though
 		if (Part->mJoint != nullptr)
-			Part->Activate(Force);
+			Part->Activate(NewVel);
 	}
 }
 

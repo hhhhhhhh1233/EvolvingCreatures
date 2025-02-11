@@ -56,12 +56,12 @@ void CreaturePart::ConfigureJoint()
 	//mJoint->setDriveTarget(physx::PxArticulationAxis::eSWING2, 0);
 }
 
-void CreaturePart::Activate(float Force)
+void CreaturePart::Activate(float NewVel)
 {
 	/// Torque doesn't get the physicality that I want
 	//mLink->addTorque({ 0, 0, Force });
 
-	mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, Force);
+	mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, NewVel);
 }
 
 void CreaturePart::Update()

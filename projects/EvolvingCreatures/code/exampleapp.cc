@@ -262,12 +262,16 @@ ExampleApp::Run()
 	{
 		auto end = std::chrono::high_resolution_clock::now();
 		float deltaseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.0f;
+		float timesincestart = std::chrono::duration_cast<std::chrono::milliseconds>(end - appStart).count() / 1000.0f;
 		start = std::chrono::high_resolution_clock::now();
 
 		mAccumulator += deltaseconds;
 		if (mAccumulator > mStepSize)
 		{
-			NewCreature->Activate(10 * sin(5 * (std::chrono::duration_cast<std::chrono::milliseconds>(end - appStart).count() / 1000.0f)));
+			float MaxVel = 10;
+			float OscillationSpeed = 5;
+
+			NewCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
 
 			mScene->simulate(mStepSize);
 			mScene->fetchResults(true);
