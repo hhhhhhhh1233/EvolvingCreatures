@@ -95,6 +95,11 @@ void Creature::AddToScene(physx::PxScene* Scene)
 	Scene->addArticulation(*mArticulation);
 }
 
+void Creature::RemoveFromScene(physx::PxScene* Scene)
+{
+	Scene->removeArticulation(*mArticulation);
+}
+
 void Creature::Update()
 {
 	mRootPart->Update();

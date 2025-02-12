@@ -16,7 +16,7 @@ public:
 
 	const float verticalLimit = 3.14/2; /// How many radians up or down the camera can move
 	float mCurrentSpeed = REGULAR_SPEED;
-	float mMouseSpeed = 0.5;
+	float mMouseSpeed = 0.2;
 	double mHorizontalAngle = 3.141592;
 	double mVerticalAngle = 0;
 	bool bFirstPress = true;
@@ -42,7 +42,7 @@ public:
 		return lookat(mPosition, mTarget, mUp);
 	}
 
-	void Update(GLFWwindow* window, float deltaseconds)
+	void UpdateInput(GLFWwindow* window, float deltaseconds)
 	{
 		double xpos, ypos;
 

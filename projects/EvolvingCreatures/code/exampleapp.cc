@@ -5,17 +5,23 @@
 #include "config.h"
 #include "exampleapp.h"
 #include <cstring>
+
 #include "render/GraphicsNode.h"
 #include "render/camera.h"
 #include "render/grid.h"
 #include "render/PointLightSource.h"
+
 #include <chrono>
+
 #include <PxPhysicsAPI.h>
 #include <PxPhysics.h>
 #include <pvd/PxPvd.h>
 #include <pvd/PxPvdTransport.h>
 #include <pvd/PxPvdSceneClient.h>
+
 #include "Creature.h"
+
+#include "imgui.h"
 
 #define FILE_ROOT "C:\\Users\\tagtje-1\\Documents\\EvolvingCreatures\\ProjectFiles\\"
 
@@ -238,16 +244,13 @@ ExampleApp::Run()
 		shape->release();
 	}
 
+	mScene->addActor(*PlaneCollision);
 
+	auto CreatureStart = std::chrono::high_resolution_clock::now();
 	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
 	NewCreature->SetPosition(vec3(0, 10, 0));
 	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-
-	auto PartArr = NewCreature->GetAllParts();
-	std::cout << "The creature has " << PartArr.size() << " parts.\n";
-
-	mScene->addActor(*PlaneCollision);
 	NewCreature->AddToScene(mScene);
 
 	/// ------------------------------------------
@@ -256,6 +259,25 @@ ExampleApp::Run()
 
 	float mAccumulator = 0.0f;
 	float mStepSize = 1.0f / 60.0f;
+
+	bool bAttachCam = false;
+	bool bResetCreature = false;
+	this->window->SetUiRender([this, &NewCreature, &bAttachCam, mPhysics, materialPtr, shapeFlags, artCube, mScene, &CreatureStart, &bResetCreature]()
+	{
+		bool show = true;
+		// create a new window
+		ImGui::Begin("Evolving Creatures Options", &show, ImGuiWindowFlags_NoSavedSettings);
+
+		ImGui::Checkbox("Attach Camera to Creature", &bAttachCam);
+
+		if (ImGui::Button("Regenerate Creature"))
+		{
+			bResetCreature = true;
+		}
+
+		// close window
+		ImGui::End();
+	});
 
 	const auto [ SCR_WIDTH, SCR_HEIGHT ] = window->GetWidthHeight();
 
@@ -266,11 +288,27 @@ ExampleApp::Run()
 		float timesincestart = std::chrono::duration_cast<std::chrono::milliseconds>(end - appStart).count() / 1000.0f;
 		start = std::chrono::high_resolution_clock::now();
 
+		if (bResetCreature)
+		{
+			delete NewCreature;
+
+			CreatureStart = std::chrono::high_resolution_clock::now();
+			/// This would probably be good to do but I can't do it while the simulation is running apparently so I don't know how to tweak it
+			NewCreature->RemoveFromScene(mScene);
+			NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
+			NewCreature->SetPosition(vec3(0, 10, 0));
+			NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+			NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+			NewCreature->AddToScene(mScene);
+
+			bResetCreature = false;
+		}
+
 		mAccumulator += deltaseconds;
 		if (mAccumulator > mStepSize)
 		{
 			float MaxVel = 10;
-			float OscillationSpeed = 5;
+			float OscillationSpeed = 2;
 
 			NewCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
 
@@ -287,7 +325,16 @@ ExampleApp::Run()
 		if (glfwGetKey(window->window, GLFW_KEY_F) == GLFW_PRESS)
 			NewCreature->mRootPart->mLink->addForce({ 0, 45, 0 });
 		
-		cam.Update(window->window, deltaseconds);
+		if (!bAttachCam)
+			cam.UpdateInput(window->window, deltaseconds);
+		else
+		{
+			auto PV = NewCreature->mRootPart->mLink->getGlobalPose().p;
+			vec3 v(PV.x, PV.y, PV.z);
+			cam.mTarget = v;
+
+			cam.mPosition = cam.mTarget + vec3(5, 5, 0);
+		}
 
 		auto frameStart = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds{ frameStart - appStart };
