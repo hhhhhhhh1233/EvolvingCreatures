@@ -290,11 +290,12 @@ ExampleApp::Run()
 
 		if (bResetCreature)
 		{
-			delete NewCreature;
 
 			CreatureStart = std::chrono::high_resolution_clock::now();
 			/// This would probably be good to do but I can't do it while the simulation is running apparently so I don't know how to tweak it
 			NewCreature->RemoveFromScene(mScene);
+			delete NewCreature;
+
 			NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
 			NewCreature->SetPosition(vec3(0, 10, 0));
 			NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
@@ -392,8 +393,6 @@ ExampleApp::Run()
 		sphere.draw(viewProjection);
 
 		NewCreature->Draw(viewProjection);
-		//NewCreature->mRootPart->Draw(viewProjection);
-		//NewCreature->mRootPart->mChildren[0]->Draw(viewProjection);
 
 		Quad.draw(viewProjection);
 
