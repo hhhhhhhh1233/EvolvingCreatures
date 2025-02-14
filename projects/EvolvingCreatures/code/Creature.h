@@ -11,6 +11,7 @@ public:
 	CreaturePart* mRootPart;
 	
 	Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale);
+	~Creature();
 	CreaturePart* GetChildlessPart() const;
 	CreaturePart* GetRandomPart();
 	std::vector<CreaturePart*> GetAllParts();

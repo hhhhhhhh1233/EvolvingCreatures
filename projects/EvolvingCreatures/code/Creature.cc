@@ -12,6 +12,15 @@ Creature::Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial
 	mRootPart->AddBoxShape(Physics, Scale, Node);
 }
 
+Creature::~Creature()
+{
+	std::vector<CreaturePart*> Parts = GetAllParts();
+	for (auto Part : Parts)
+	{
+		delete Part;
+	}
+}
+
 CreaturePart* Creature::GetChildlessPart() const
 {
 	CreaturePart* CurrentPart = mRootPart;
