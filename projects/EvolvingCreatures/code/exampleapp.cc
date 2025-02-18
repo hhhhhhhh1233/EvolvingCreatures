@@ -262,13 +262,27 @@ ExampleApp::Run()
 
 	bool bAttachCam = false;
 	bool bResetCreature = false;
-	this->window->SetUiRender([this, &NewCreature, &bAttachCam, mPhysics, materialPtr, shapeFlags, artCube, mScene, &CreatureStart, &bResetCreature]()
+	bool bActiveCreature = true;
+	bool bSimulateGravity = true;
+	int BodyPartsNum = 2;
+	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature]()
 	{
 		bool show = true;
 		// create a new window
 		ImGui::Begin("Evolving Creatures Options", &show, ImGuiWindowFlags_NoSavedSettings);
 
 		ImGui::Checkbox("Attach Camera to Creature", &bAttachCam);
+
+		ImGui::Checkbox("Simulate Creature", &bActiveCreature);
+
+		if (ImGui::Button("Toggle Gravity"))
+		{
+			NewCreature->EnableGravity(!bSimulateGravity);
+			bSimulateGravity = !bSimulateGravity;
+		}
+
+		ImGui::InputInt("Number of limbs", &BodyPartsNum);
+		BodyPartsNum = BodyPartsNum < 0 ? 0 : BodyPartsNum;
 
 		if (ImGui::Button("Regenerate Creature"))
 		{
@@ -298,9 +312,12 @@ ExampleApp::Run()
 
 			NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
 			NewCreature->SetPosition(vec3(0, 10, 0));
+			for (int i = 0; i < BodyPartsNum; i++)
 			NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-			NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+			//NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 			NewCreature->AddToScene(mScene);
+
+			NewCreature->EnableGravity(bSimulateGravity);
 
 			bResetCreature = false;
 		}
@@ -311,6 +328,7 @@ ExampleApp::Run()
 			float MaxVel = 10;
 			float OscillationSpeed = 2;
 
+			if (bActiveCreature)
 			NewCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
 
 			mScene->simulate(mStepSize);

@@ -23,4 +23,5 @@ public:
 	void Update();
 	void Activate(float Force);
 	void Draw(mat4 ViewProjection);
+	void EnableGravity(bool NewState);
 };

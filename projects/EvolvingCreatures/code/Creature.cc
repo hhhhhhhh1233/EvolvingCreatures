@@ -129,3 +129,12 @@ void Creature::Draw(mat4 ViewProjection)
 {
 	mRootPart->Draw(ViewProjection);
 }
+
+void Creature::EnableGravity(bool NewState)
+{
+	std::vector<CreaturePart*> Parts = GetAllParts();
+	for (auto Part : Parts)
+	{
+		Part->mLink->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !NewState);
+	}
+}
