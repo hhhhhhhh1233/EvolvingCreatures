@@ -154,7 +154,7 @@ ExampleApp::Run()
 	mat4 lightProjection = ortho(-10, 10, -10, 10, 0.1f, 1000);
 	
 	Camera cam;
-	cam.mPosition = vec3(0, 1, 3);
+	cam.mPosition = vec3(0, 3, 8);
 
 	/// ------------------------------------------
 	/// [BEGIN] LIGHT SETUP
