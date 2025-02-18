@@ -14,8 +14,8 @@ void CreaturePart::AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNo
 	mNode = Node;
 }
 
-void CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
-	physx::PxShapeFlags ShapeFlags, vec3 Scale, GraphicsNode Node, vec3 RelativePosition, vec3 ParentPosition)
+CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
+	physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition)
 {
 	CreaturePart* NewPart = new CreaturePart(PhysicsMaterial, ShapeFlags);
 	NewPart->mLink = Articulation->createLink(mLink, physx::PxTransform(physx::PxIdentity));
@@ -23,25 +23,32 @@ void CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticulationRedu
 
 	NewPart->mJoint = NewPart->mLink->getInboundJoint();
 	//NewPart->mJoint->setParentPose(physx::PxTransform({ParentPosition.x, ParentPosition.y, ParentPosition.z}));
-	NewPart->mJoint->setParentPose(physx::PxTransform(physx::PxIdentity));
-	NewPart->mJoint->setChildPose(physx::PxTransform({RelativePosition.x, RelativePosition.y, RelativePosition.z}));
+	//NewPart->mJoint->setParentPose(physx::PxTransform(physx::PxIdentity));
+	/// THIS IS NOT RIGHT, THE PARENT ONE SHOULD BE BASED ON THE PARENTS SCALE, THE DISTANCE TO THE EDGE OF THE PARENT SHAPE
+	/// WHILE THE CHILD SHOULD BE THE SCALE OF ITSELF, THE DISTANCE FROM ITS CENTER TO THE EDGE FACING THE
+	NewPart->mJoint->setParentPose(physx::PxTransform({JointPosition.x, JointPosition.y, JointPosition.z}));
+	NewPart->mJoint->setChildPose(physx::PxTransform({JointPosition.x - RelativePosition.x, JointPosition.y - RelativePosition.y, JointPosition.z - RelativePosition.z}));
 
 	NewPart->ConfigureJoint();
 	
 	mChildren.push_back(NewPart);
+
+	return NewPart;
 }
 
 /// TODO: Add options to this for different styled joints
 /// PosDrive should probably be a parameter
 void CreaturePart::ConfigureJoint()
 {
+	/// This sets the joint axis to either eTWIST, eSWING1, or eSWING2
+	mJointAxis = static_cast<physx::PxArticulationAxis::Enum>((rand() % 3));
 	/// Configure the joint type and motion, limited motion
 	mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
-	mJoint->setMotion(physx::PxArticulationAxis::eSWING2, physx::PxArticulationMotion::eFREE);
+	mJoint->setMotion(mJointAxis, physx::PxArticulationMotion::eFREE);
 	physx::PxArticulationLimit limits;
 	limits.low = -physx::PxPiDivFour;
 	limits.high = physx::PxPiDivFour;
-	mJoint->setLimitParams(physx::PxArticulationAxis::eSWING2, limits);
+	mJoint->setLimitParams(mJointAxis, limits);
 
 	/// Add joint drive
 	physx::PxArticulationDrive posDrive;
@@ -51,7 +58,7 @@ void CreaturePart::ConfigureJoint()
 	posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
 
 	/// Apply and Set targets (note the consistent axis)
-	mJoint->setDriveParams(physx::PxArticulationAxis::eSWING2, posDrive);
+	mJoint->setDriveParams(mJointAxis, posDrive);
 	//mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, 0.0f);
 	//mJoint->setDriveTarget(physx::PxArticulationAxis::eSWING2, 0);
 }
@@ -61,7 +68,8 @@ void CreaturePart::Activate(float NewVel)
 	/// Torque doesn't get the physicality that I want
 	//mLink->addTorque({ 0, 0, Force });
 
-	mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, NewVel);
+	//mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, NewVel);
+	mJoint->setDriveVelocity(mJointAxis, NewVel);
 }
 
 void CreaturePart::Update()

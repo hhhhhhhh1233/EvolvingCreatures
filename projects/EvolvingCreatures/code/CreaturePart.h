@@ -11,6 +11,7 @@ public:
 	physx::PxMaterial* mPhysicsMaterial = nullptr;
 	physx::PxShapeFlags mShapeFlags;
 	physx::PxArticulationJointReducedCoordinate* mJoint = nullptr;
+	physx::PxArticulationAxis::Enum mJointAxis;
 	
 	std::vector<CreaturePart*> mChildren;
 
@@ -21,8 +22,8 @@ public:
 
 	void AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node);
 
-	void AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial,
-		physx::PxShapeFlags ShapeFlags, vec3 Scale, GraphicsNode Node, vec3 RelativePosition, vec3 ParentPosition);
+	CreaturePart* AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial,
+		physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition);
 
 	/// TODO: Add options to this for different styled joints
 	/// PosDrive should probably be a parameter
