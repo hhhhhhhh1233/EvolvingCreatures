@@ -316,6 +316,7 @@ ExampleApp::Run()
 		if (bResetCreature)
 		{
 
+			std::cout << "\n----------------------------------------\nCreating new Creature!\n";
 			CreatureStart = std::chrono::high_resolution_clock::now();
 			/// This would probably be good to do but I can't do it while the simulation is running apparently so I don't know how to tweak it
 			NewCreature->RemoveFromScene(mScene);
@@ -331,6 +332,7 @@ ExampleApp::Run()
 			NewCreature->EnableGravity(bSimulateGravity);
 
 			bResetCreature = false;
+			std::cout << "\n----------------------------------------";
 		}
 
 		mAccumulator += deltaseconds;
@@ -350,7 +352,7 @@ ExampleApp::Run()
 		physx::PxVec3 CreatureVel = NewCreature->mRootPart->mLink->getLinearVelocity();
 		//std::cout << CreatureVel.x << ", " << CreatureVel.y << ", " << CreatureVel.z << "\n";
 		vec3 CreatureHorizontalVel = vec3(CreatureVel.x, 0, CreatureVel.z);
-		std::cout << "Creature Velocity: " << length(CreatureHorizontalVel) << "\n";
+		//std::cout << "Creature Velocity: " << length(CreatureHorizontalVel) << "\n";
 
 		if (glfwGetKey(window->window, GLFW_KEY_F) == GLFW_PRESS)
 			NewCreature->mRootPart->mLink->addForce({ 0, 45, 0 });

@@ -73,11 +73,11 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 {
 	CreaturePart* ParentPart = GetRandomPart();
 
-	int RANDOM_MAX = 3;
-	float RandomScaleX = ((rand() % (RANDOM_MAX * 100)) / 100.0f) + 0.1;
-	float RandomScaleY = ((rand() % (RANDOM_MAX * 100)) / 100.0f) + 0.1;
-	float RandomScaleZ = ((rand() % (RANDOM_MAX * 100)) / 100.0f) + 0.1;
-	vec3 RandomScale = vec3(RandomScaleX, RandomScaleY, RandomScaleZ);
+	std::cout << "\nCreating new part\n";
+	if (ParentPart == mRootPart)
+		std::cout << "Attach to root: TRUE!\n";
+	else
+		std::cout << "Attach to root: False\n";
 
 	int MAX_SCALE = 5;
 	float RandomScaleX = RandomFloat(MAX_SCALE);
