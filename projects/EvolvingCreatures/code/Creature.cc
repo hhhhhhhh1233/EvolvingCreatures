@@ -3,7 +3,7 @@
 Creature::Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale)
 {
 	mArticulation = Physics->createArticulationReducedCoordinate();
-	mArticulation->setArticulationFlag(physx::PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
+	//mArticulation->setArticulationFlag(physx::PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
 
 	//mRootPart = new CreaturePart(this, PhysicsMaterial, ShapeFlags);
 	mRootPart = new CreaturePart(PhysicsMaterial, ShapeFlags);
