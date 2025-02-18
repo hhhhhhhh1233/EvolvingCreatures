@@ -294,6 +294,7 @@ ExampleApp::Run()
 
 		ImGui::InputInt("Number of limbs", &BodyPartsNum);
 		BodyPartsNum = BodyPartsNum < 0 ? 0 : BodyPartsNum;
+		BodyPartsNum = BodyPartsNum > 254 ? 254 : BodyPartsNum;
 
 		if (ImGui::Button("Regenerate Creature"))
 		{
