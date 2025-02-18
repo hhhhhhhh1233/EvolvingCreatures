@@ -64,12 +64,13 @@ std::vector<CreaturePart*> Creature::GetAllPartsFrom(CreaturePart* Part)
 	return Parts;
 }
 
+inline static float RandomFloat(float Mult = 1)
+{
+	return Mult * (float(rand()) / float(RAND_MAX));
+}
+
 void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node)
 {
-	//CreaturePart* CurrentPart = mRootPart;
-
-	//const int ODDS_TO_ADD_PART = 20;
-
 	CreaturePart* ParentPart = GetRandomPart();
 
 	int RANDOM_MAX = 3;
@@ -78,20 +79,59 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	float RandomScaleZ = ((rand() % (RANDOM_MAX * 100)) / 100.0f) + 0.1;
 	vec3 RandomScale = vec3(RandomScaleX, RandomScaleY, RandomScaleZ);
 
-	float X = ((rand() % (RANDOM_MAX * 10)) / 10.0f);
-	float Y = ((rand() % (RANDOM_MAX * 10)) / 10.0f);
-	float Z = (RandomScale.z + ParentPart->mScale.z) * (((rand() % 2) * 2) - 1);
+	int MAX_SCALE = 5;
+	float RandomScaleX = RandomFloat(MAX_SCALE);
+	float RandomScaleY = RandomFloat(MAX_SCALE);
+	float RandomScaleZ = RandomFloat(MAX_SCALE);
+	vec3 RandomScale(RandomScaleX, RandomScaleY, RandomScaleZ);
+	//vec3 RandomScale(1, 1, 1);
 
-	std::cout << "Z: " << Z << "\n";
+	vec3 RandomRelativePosition;
 
-	vec3 RandomRelativePosition = vec3(X, Y, Z);
+	float MAX_RANGE = 3;
+	int POS_MULT = (((rand() % 2) * 2) - 1);
+	int PLANE = rand() % 3;
+	vec3 JointPos;
+	switch (PLANE)
+	{
+	case(0):
+	{
+		float X = RandomFloat(RandomScaleX * 2) - RandomScaleX;
+		float Y = RandomFloat(RandomScaleY * 2) - RandomScaleY;
+		float Z = (RandomScale.z + ParentPart->mScale.z) * POS_MULT;
+		std::cout << "Generating on the XY plane!\n";
+		std::cout << "New pos is: " << X << ", " << Y << ", " << Z << "\n";
+		RandomRelativePosition = vec3(X, Y, Z);
+		JointPos = vec3(((RandomRelativePosition.x - RandomScaleX) + ParentPart->mScale.x) / 2, ((RandomRelativePosition.y - RandomScaleY) + ParentPart->mScale.y) / 2, ParentPart->mScale.z * POS_MULT);
+		break;
+	}
+	case(1):
+	{
+		float X = RandomFloat(RandomScaleX * 2) - RandomScaleX;
+		float Y = (RandomScale.y + ParentPart->mScale.y) * POS_MULT;
+		float Z = RandomFloat(RandomScaleZ * 2) - RandomScaleZ;
+		std::cout << "Generating on the XZ plane!\n";
+		std::cout << "New pos is: " << X << ", " << Y << ", " << Z << "\n";
+		RandomRelativePosition = vec3(X, Y, Z);
+		JointPos = vec3(((RandomRelativePosition.x - RandomScaleX) + ParentPart->mScale.x) / 2, ParentPart->mScale.y * POS_MULT, ((RandomRelativePosition.y - RandomScaleY) + ParentPart->mScale.y) / 2);
+		break;
+	}
+	case(2):
+	{
+		float X = (RandomScale.x + ParentPart->mScale.x) * POS_MULT;
+		float Y = RandomFloat(RandomScaleY * 2) - RandomScaleY;
+		float Z = RandomFloat(RandomScaleZ * 2) - RandomScaleZ;
+		std::cout << "Generating on the YZ plane!\n";
+		std::cout << "New pos is: " << X << ", " << Y << ", " << Z << "\n";
+		RandomRelativePosition = vec3(X, Y, Z);
+		JointPos = vec3(ParentPart->mScale.x * POS_MULT, ((RandomRelativePosition.x - RandomScaleX) + ParentPart->mScale.x) / 2, ((RandomRelativePosition.y - RandomScaleY) + ParentPart->mScale.y) / 2);
+		break;
+	}
+	}
 
 	ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, RandomScale, Node, RandomRelativePosition, vec3(0, 0, 0));
 
-	//if (rand() % 100 < ODDS_TO_ADD_PART)
-	//	std::cout << "Lucky! You're in the lucky 20%\n";
-	//else
-	//	std::cout << "Unlucky... You're in the unlucky 80%\n";
+	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, JointPos);
 }
 
 void Creature::SetPosition(vec3 Position)
