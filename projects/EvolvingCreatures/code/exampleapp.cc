@@ -325,7 +325,7 @@ ExampleApp::Run()
 			NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
 			NewCreature->SetPosition(vec3(0, 10, 0));
 			for (int i = 0; i < BodyPartsNum; i++)
-			NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+				NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 			//NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 			NewCreature->AddToScene(mScene);
 
