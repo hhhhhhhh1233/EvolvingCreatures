@@ -249,8 +249,19 @@ ExampleApp::Run()
 	auto CreatureStart = std::chrono::high_resolution_clock::now();
 	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
 	NewCreature->SetPosition(vec3(0, 10, 0));
-	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+	CreaturePart* a = NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 4, 0), vec3(0, 1.5, 0));
+	CreaturePart* b = a->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 5, 0), vec3(0, 2.5, 0));
+	CreaturePart* c = b->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 5, 0), vec3(0, 2.5, 0));
+	CreaturePart* d = c->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 5, 0), vec3(0, 2.5, 0));
+	CreaturePart* e = d->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 5, 0), vec3(0, 2.5, 0));
+	/// WHETHER THE LAST PARAMETER IS 1.5 ON X OR 0 IT MAKES NO DIFFERENCE
+	/// JUSTIFY WHY AND WHAT IS HAPPENING
+	/// THAT WILL ILLUMINATE HOW IT WORKS
+	/// I WAS WRONG; IT IS DIFFERENT
+	/// THE ATTACHMENT CHANGES FROM BEING EITHER AT THE EDGE OR IN THE CENTER
+
+	//NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+	//NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 	NewCreature->AddToScene(mScene);
 
 	/// ------------------------------------------
