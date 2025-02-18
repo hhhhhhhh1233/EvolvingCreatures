@@ -344,6 +344,9 @@ ExampleApp::Run()
 		if (glfwGetKey(window->window, GLFW_KEY_F) == GLFW_PRESS)
 			NewCreature->mRootPart->mLink->addForce({ 0, 45, 0 });
 		
+		if (glfwGetKey(window->window, GLFW_KEY_G) == GLFW_PRESS)
+			NewCreature->mRootPart->mLink->addTorque({ 50, 0, 0 });
+		
 		if (!bAttachCam)
 			cam.UpdateInput(window->window, deltaseconds);
 		else
