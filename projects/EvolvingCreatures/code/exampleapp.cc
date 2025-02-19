@@ -20,6 +20,7 @@
 #include <pvd/PxPvdSceneClient.h>
 
 #include "Creature.h"
+#include "GenerationManager.h"
 
 #include "imgui.h"
 
@@ -274,6 +275,9 @@ ExampleApp::Run()
 	/// [END] CREATE ACTORS
 	/// ------------------------------------------
 
+	GenerationManager* GenMan = new GenerationManager(mPhysics);
+	GenMan->GenerateCreatures(artCube);
+
 	float mAccumulator = 0.0f;
 	float mStepSize = 1.0f / 60.0f;
 
@@ -348,10 +352,15 @@ ExampleApp::Run()
 			float OscillationSpeed = 2;
 
 			if (bActiveCreature)
-			NewCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
+			{
+				NewCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
+				GenMan->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
+			}
 
 			mScene->simulate(mStepSize);
 			mScene->fetchResults(true);
+
+			GenMan->Simulate(mStepSize);
 
 			mAccumulator -= mStepSize;
 		}
@@ -396,6 +405,7 @@ ExampleApp::Run()
 		sphere.transform = translate(light.position) * scale(0.1);
 
 		NewCreature->Update();
+		GenMan->UpdateCreatures();
 		
 		mat4 view = cam.GetView();
 		mat4 viewProjection = projection * view;
@@ -433,6 +443,7 @@ ExampleApp::Run()
 		sphere.draw(viewProjection);
 
 		NewCreature->Draw(viewProjection);
+		GenMan->DrawCreatures(viewProjection);
 
 		Quad.draw(viewProjection);
 
