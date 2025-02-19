@@ -9,10 +9,12 @@ void GenerationManager::GenerateCreatures(GraphicsNode Node)
 {
 	for (int i = 0; i < mGenereationSize; i++)
 	{
-		CreatureStats NewCreature;
 		physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
 		physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
-		NewCreature.Crea = new Creature(mPhysics, MaterialPtr, ShapeFlags, Node, vec3(1,1,1));
+		Creature* reature = new Creature(mPhysics, MaterialPtr, ShapeFlags, Node, vec3(2,1,1));
+		reature->AddRandomPart(mPhysics, MaterialPtr, ShapeFlags, Node);
+		reature->AddRandomPart(mPhysics, MaterialPtr, ShapeFlags, Node);
+		reature->SetPosition(vec3(0, 10, 0));
 
 		/// ----------------------------------------
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
@@ -33,8 +35,8 @@ void GenerationManager::GenerateCreatures(GraphicsNode Node)
 		SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 		SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 
-		NewCreature.Scene = mPhysics->createScene(SceneDesc);
-		NewCreature.Scene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
+		physx::PxScene* Scene = mPhysics->createScene(SceneDesc);
+		Scene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
 
 		physx::PxRigidStatic* PlaneCollision = mPhysics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
 		{
@@ -43,12 +45,48 @@ void GenerationManager::GenerateCreatures(GraphicsNode Node)
 			shape->release();
 		}
 
-		NewCreature.Scene->addActor(*PlaneCollision);
+		Scene->addActor(*PlaneCollision);
 
 		/// ----------------------------------------
 		/// [END] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
+
+		reature->AddToScene(Scene);
 			
+		CreatureStats* NewCreature = new CreatureStats(reature, Scene);
 		mCreatures.push_back(NewCreature);
+	}
+}
+
+void GenerationManager::Simulate(float StepSize)
+{
+	for (auto creature : mCreatures)
+	{
+		creature->mScene->simulate(StepSize);
+		creature->mScene->fetchResults(true);
+	}
+}
+
+void GenerationManager::UpdateCreatures()
+{
+	for (auto creature : mCreatures)
+	{
+		creature->mCreature->Update();
+	}
+}
+
+void GenerationManager::DrawCreatures(mat4 ViewProjection)
+{
+	for (auto creature : mCreatures)
+	{
+		creature->mCreature->Draw(ViewProjection);
+	}
+}
+
+void GenerationManager::Activate(float Force)
+{
+	for (auto creature : mCreatures)
+	{
+		creature->mCreature->Activate(Force);
 	}
 }
