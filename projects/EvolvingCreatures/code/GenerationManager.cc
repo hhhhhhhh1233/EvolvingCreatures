@@ -1,6 +1,11 @@
 #include "GenerationManager.h"
 
-void GenereationManager::GenerateCreatures(GraphicsNode Node)
+GenerationManager::GenerationManager(physx::PxPhysics* Physics) : mPhysics(Physics)
+{
+	/// Intentionally left blank
+}
+
+void GenerationManager::GenerateCreatures(GraphicsNode Node)
 {
 	for (int i = 0; i < mGenereationSize; i++)
 	{

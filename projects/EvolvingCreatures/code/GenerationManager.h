@@ -11,12 +11,14 @@ struct CreatureStats
 	physx::PxScene* Scene;
 };
 
-class GenereationManager
+class GenerationManager
 {
 public:
 	unsigned int mGenereationSize = 50;
 	std::vector<CreatureStats> mCreatures;
 	physx::PxPhysics* mPhysics;
+
+	GenerationManager(physx::PxPhysics* Physics);
 
 	/// This will populate the vector above with creatures and scenes with a plane, with mGenerationSize amount of creatures
 	void GenerateCreatures(GraphicsNode Node);
