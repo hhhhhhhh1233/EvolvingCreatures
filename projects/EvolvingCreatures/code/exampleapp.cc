@@ -247,21 +247,27 @@ ExampleApp::Run()
 	mScene->addActor(*PlaneCollision);
 
 	auto CreatureStart = std::chrono::high_resolution_clock::now();
-	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
-	NewCreature->SetPosition(vec3(0, 10, 0));
-	CreaturePart* a = NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 4, 0), vec3(0, 1.5, 0));
-	CreaturePart* b = a->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 5, 0), vec3(0, 2.5, 0));
-	CreaturePart* c = b->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 5, 0), vec3(0, 2.5, 0));
-	CreaturePart* d = c->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 5, 0), vec3(0, 2.5, 0));
-	CreaturePart* e = d->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, vec3(1.5, 2.5, 1.5), vec3(0, 5, 0), vec3(0, 2.5, 0));
-	/// WHETHER THE LAST PARAMETER IS 1.5 ON X OR 0 IT MAKES NO DIFFERENCE
-	/// JUSTIFY WHY AND WHAT IS HAPPENING
-	/// THAT WILL ILLUMINATE HOW IT WORKS
-	/// I WAS WRONG; IT IS DIFFERENT
-	/// THE ATTACHMENT CHANGES FROM BEING EITHER AT THE EDGE OR IN THE CENTER
 
-	//NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-	//NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+	vec3 RootScale(1.5f, 2.5f, 1.5f);
+	vec3 ChildScale(1.5, 3.5, 1.5);
+
+	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, RootScale);
+	NewCreature->SetPosition(vec3(0, 10, 0));
+
+	/// The positions are different, the way you get that is by taking parent scale plus child scale in the axis want to move it along, 4 = 1.5 + 2.5, and 5 = 2.5 + 2.5
+	vec3 FirstChildPosition(0, RootScale.y + ChildScale.y, 0);
+	vec3 ChildPosition(0, ChildScale.y + ChildScale.y, 0);
+
+	/// The way you get the joint is by taking just the parent's scale in that axis
+	vec3 FirstChildJointPosition(0, RootScale.y, 0);
+	vec3 ChildJointPosition(0, ChildScale.y, 0);
+
+	CreaturePart* a = NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, FirstChildPosition, FirstChildJointPosition);
+	CreaturePart* b = a->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition);
+	CreaturePart* c = b->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition);
+	CreaturePart* d = c->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition);
+	CreaturePart* e = d->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition);
+
 	NewCreature->AddToScene(mScene);
 
 	/// ------------------------------------------
@@ -293,8 +299,7 @@ ExampleApp::Run()
 		}
 
 		ImGui::InputInt("Number of limbs", &BodyPartsNum);
-		BodyPartsNum = BodyPartsNum < 0 ? 0 : BodyPartsNum;
-		BodyPartsNum = BodyPartsNum > 254 ? 254 : BodyPartsNum;
+		BodyPartsNum = BodyPartsNum < 0 ? 0 : BodyPartsNum > 254 ? 254 : BodyPartsNum;
 
 		if (ImGui::Button("Regenerate Creature"))
 		{
@@ -319,15 +324,15 @@ ExampleApp::Run()
 
 			std::cout << "\n----------------------------------------\nCreating new Creature!\n";
 			CreatureStart = std::chrono::high_resolution_clock::now();
-			/// This would probably be good to do but I can't do it while the simulation is running apparently so I don't know how to tweak it
 			NewCreature->RemoveFromScene(mScene);
 			delete NewCreature;
 
 			NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
 			NewCreature->SetPosition(vec3(0, 10, 0));
+
 			for (int i = 0; i < BodyPartsNum; i++)
 				NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-			//NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+
 			NewCreature->AddToScene(mScene);
 
 			NewCreature->EnableGravity(bSimulateGravity);
