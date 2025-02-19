@@ -1,4 +1,5 @@
 #include "Creature.h"
+#include "RandomUtils.h"
 
 Creature::Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale)
 {
@@ -62,18 +63,6 @@ std::vector<CreaturePart*> Creature::GetAllPartsFrom(CreaturePart* Part)
 	Parts.push_back(Part);
 
 	return Parts;
-}
-
-inline static float RandomFloat(float Mult = 1)
-{
-	return Mult * (float(rand()) / float(RAND_MAX));
-}
-
-inline static float RandomFloatInRange(float Min, float Max)
-{
-	float x = RandomFloat(Max - Min) - -Min;
-	assert(x < Max && x > Min);
-	return x;
 }
 
 void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node)
