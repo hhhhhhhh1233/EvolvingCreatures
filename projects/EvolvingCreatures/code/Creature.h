@@ -24,4 +24,5 @@ public:
 	void Activate(float Force);
 	void Draw(mat4 ViewProjection);
 	void EnableGravity(bool NewState);
+	Creature* GetMutatedCreature(physx::PxPhysics* Physics);
 };

@@ -170,3 +170,34 @@ void Creature::EnableGravity(bool NewState)
 		Part->mLink->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !NewState);
 	}
 }
+
+Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics)
+{
+	Creature* NewCreature = new Creature(Physics, mRootPart->mPhysicsMaterial, mRootPart->mShapeFlags, mRootPart->mNode, mRootPart->mScale);
+	//NewCreature->SetPosition(vec3(0, 10, 0));
+
+	//for (int i = 0; i < BodyPartsNum; i++)
+	//	NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+
+	//NewCreature->AddToScene(mScene);
+	//CreaturePart* CurrentSelfPart = mRootPart;
+	//CreaturePart* CurrentMutatedPart = NewCreature->mRootPart;
+
+	//std::vector<CreaturePart*> PartsToLookAt;
+
+	//while (CurrentSelfPart->mChildren.size() > 0)
+	//{
+	//	for (auto Part : CurrentSelfPart->mChildren)
+	//	{
+	//		PartsToLookAt.push_back(Part);
+	//		/// TODO: All of the positions at the end are mScale cause I'm lazy, but they should
+	//		/// be the relative position and the joint position which are not saved as of yet
+	//		CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, Part->mPhysicsMaterial, Part->mShapeFlags, Part->mNode, Part->mScale, Part->mScale, Part->mScale);
+	//	}
+	//	CurrentSelfPart = PartsToLookAt[0];
+	//	PartsToLookAt.erase(PartsToLookAt.begin());
+	//}
+
+	//NewCreature->EnableGravity(bSimulateGravity);
+	return NewCreature;
+}
