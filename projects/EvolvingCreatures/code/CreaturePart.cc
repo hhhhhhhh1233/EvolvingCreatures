@@ -22,10 +22,6 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 	NewPart->AddBoxShape(Physics, Scale, Node);
 
 	NewPart->mJoint = NewPart->mLink->getInboundJoint();
-	//NewPart->mJoint->setParentPose(physx::PxTransform({ParentPosition.x, ParentPosition.y, ParentPosition.z}));
-	//NewPart->mJoint->setParentPose(physx::PxTransform(physx::PxIdentity));
-	/// THIS IS NOT RIGHT, THE PARENT ONE SHOULD BE BASED ON THE PARENTS SCALE, THE DISTANCE TO THE EDGE OF THE PARENT SHAPE
-	/// WHILE THE CHILD SHOULD BE THE SCALE OF ITSELF, THE DISTANCE FROM ITS CENTER TO THE EDGE FACING THE
 	NewPart->mJoint->setParentPose(physx::PxTransform({JointPosition.x, JointPosition.y, JointPosition.z}));
 	NewPart->mJoint->setChildPose(physx::PxTransform({JointPosition.x - RelativePosition.x, JointPosition.y - RelativePosition.y, JointPosition.z - RelativePosition.z}));
 
@@ -42,6 +38,7 @@ void CreaturePart::ConfigureJoint()
 {
 	/// This sets the joint axis to either eTWIST, eSWING1, or eSWING2
 	mJointAxis = static_cast<physx::PxArticulationAxis::Enum>((rand() % 3));
+
 	/// Configure the joint type and motion, limited motion
 	mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
 	mJoint->setMotion(mJointAxis, physx::PxArticulationMotion::eFREE);
@@ -65,10 +62,6 @@ void CreaturePart::ConfigureJoint()
 
 void CreaturePart::Activate(float NewVel)
 {
-	/// Torque doesn't get the physicality that I want
-	//mLink->addTorque({ 0, 0, Force });
-
-	//mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, NewVel);
 	mJoint->setDriveVelocity(mJointAxis, NewVel);
 }
 
