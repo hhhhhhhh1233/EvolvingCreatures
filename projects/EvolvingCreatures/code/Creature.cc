@@ -69,6 +69,13 @@ inline static float RandomFloat(float Mult = 1)
 	return Mult * (float(rand()) / float(RAND_MAX));
 }
 
+inline static float RandomFloatInRange(float Min, float Max)
+{
+	float x = RandomFloat(Max - Min) - -Min;
+	assert(x < Max && x > Min);
+	return x;
+}
+
 void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node)
 {
 	CreaturePart* ParentPart = GetRandomPart();
@@ -81,21 +88,21 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	{
 	case(0):
 		/// Times these values by [-1 , 1] to get a random point on the parent shape
-		RandomPointOnParent.x *= RandomFloat(2) - 1; 
-		RandomPointOnParent.y *= RandomFloat(2) - 1;
+		RandomPointOnParent.x *= RandomFloatInRange(-1, 1); 
+		RandomPointOnParent.y *= RandomFloatInRange(-1, 1);
 
 		/// Times this value by either -1 or 1 to get the maximum or minimum point
 		RandomPointOnParent.z *= ((rand() % 2) * 2) - 1;
 		break;
 	case(1):
-		RandomPointOnParent.z *= RandomFloat(2) - 1; 
-		RandomPointOnParent.x *= RandomFloat(2) - 1;
+		RandomPointOnParent.z *= RandomFloatInRange(-1, 1); 
+		RandomPointOnParent.x *= RandomFloatInRange(-1, 1);
 
 		RandomPointOnParent.y *= ((rand() % 2) * 2) - 1;
 		break;
 	case(2):
-		RandomPointOnParent.y *= RandomFloat(2) - 1; 
-		RandomPointOnParent.z *= RandomFloat(2) - 1;
+		RandomPointOnParent.y *= RandomFloatInRange(-1, 1); 
+		RandomPointOnParent.z *= RandomFloatInRange(-1, 1);
 
 		RandomPointOnParent.x *= ((rand() % 2) * 2) - 1;
 		break;
@@ -105,9 +112,10 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	vec3 RandomScale(RandomFloat(MAX_SCALE), RandomFloat(MAX_SCALE), RandomFloat(MAX_SCALE));
 
 	/// Set the position to be the random point we calculated, but also add a random chance to shift it around based on the shape of the child
-	vec3 RandomRelativePosition = vec3(	RandomPointOnParent.x + (RandomFloat(2 * RandomScale.x) - RandomScale.x), 
-										RandomPointOnParent.y + (RandomFloat(2 * RandomScale.y) - RandomScale.y), 
-										RandomPointOnParent.z + (RandomFloat(2 * RandomScale.z) - RandomScale.z));
+	vec3 RandomRelativePosition = vec3(	RandomPointOnParent.x + RandomFloatInRange(-RandomScale.x, RandomScale.x), 
+										RandomPointOnParent.y + RandomFloatInRange(-RandomScale.y, RandomScale.y), 
+										RandomPointOnParent.z + RandomFloatInRange(-RandomScale.z, RandomScale.z));
+	
 
 	/// Set the axis that we determined as the normal to be maxed out
 	switch (RandAxis)
