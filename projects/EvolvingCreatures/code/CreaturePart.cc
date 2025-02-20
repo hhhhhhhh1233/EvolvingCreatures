@@ -1,4 +1,5 @@
 #include "CreaturePart.h"
+#include "RandomUtils.h"
 
 CreaturePart::CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags) : mPhysicsMaterial(PhysicsMaterial), mShapeFlags(ShapeFlags)
 {
@@ -37,7 +38,7 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 void CreaturePart::ConfigureJoint()
 {
 	/// This sets the joint axis to either eTWIST, eSWING1, or eSWING2
-	mJointAxis = static_cast<physx::PxArticulationAxis::Enum>((rand() % 3));
+	mJointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
 
 	/// Configure the joint type and motion, limited motion
 	mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);

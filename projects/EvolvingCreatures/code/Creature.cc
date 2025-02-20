@@ -81,19 +81,19 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 		RandomPointOnParent.y *= RandomFloatInRange(-1, 1);
 
 		/// Times this value by either -1 or 1 to get the maximum or minimum point
-		RandomPointOnParent.z *= ((rand() % 2) * 2) - 1;
+		RandomPointOnParent.z *= (RandomInt(2) * 2) - 1;
 		break;
 	case(1):
 		RandomPointOnParent.z *= RandomFloatInRange(-1, 1); 
 		RandomPointOnParent.x *= RandomFloatInRange(-1, 1);
 
-		RandomPointOnParent.y *= ((rand() % 2) * 2) - 1;
+		RandomPointOnParent.y *= (RandomInt(2) * 2) - 1;
 		break;
 	case(2):
 		RandomPointOnParent.y *= RandomFloatInRange(-1, 1); 
 		RandomPointOnParent.z *= RandomFloatInRange(-1, 1);
 
-		RandomPointOnParent.x *= ((rand() % 2) * 2) - 1;
+		RandomPointOnParent.x *= (RandomInt(2) * 2) - 1;
 		break;
 	}
 
