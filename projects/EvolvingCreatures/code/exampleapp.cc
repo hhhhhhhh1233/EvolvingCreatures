@@ -272,6 +272,10 @@ ExampleApp::Run()
 
 	NewCreature->AddToScene(mScene);
 
+	Creature* MutatedCreature = NewCreature->GetMutatedCreature(mPhysics);
+	MutatedCreature->SetPosition(vec3(5, 10, 0));
+	MutatedCreature->AddToScene(mScene);
+
 	/// ------------------------------------------
 	/// [END] CREATE ACTORS
 	/// ------------------------------------------
@@ -355,6 +359,7 @@ ExampleApp::Run()
 			if (bActiveCreature)
 			{
 				NewCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
+				MutatedCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
 				GenMan->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
 			}
 
@@ -406,6 +411,7 @@ ExampleApp::Run()
 		sphere.transform = translate(light.position) * scale(0.1);
 
 		NewCreature->Update();
+		MutatedCreature->Update();
 		GenMan->UpdateCreatures();
 		
 		mat4 view = cam.GetView();
@@ -444,6 +450,7 @@ ExampleApp::Run()
 		sphere.draw(viewProjection);
 
 		NewCreature->Draw(viewProjection);
+		MutatedCreature->Draw(viewProjection);
 		GenMan->DrawCreatures(viewProjection);
 
 		Quad.draw(viewProjection);
