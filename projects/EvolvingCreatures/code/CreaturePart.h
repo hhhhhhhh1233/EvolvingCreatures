@@ -21,19 +21,20 @@ public:
 	vec3 mRelativePosition;
 
 	/// These values are for the activation
-	float mMaxVel = 10;
-	float mOscillationSpeed = 2;
+	float mMaxJointVel = 10;
+	float mJointOscillationSpeed = 2;
 
-	CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags);
+	CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, float MaxJointVel, float JointOscillationSpeed);
 
 	void AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node);
 
 	CreaturePart* AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial,
-		physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition);
+		physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition, float MaxJointVel, float JointOscillationSpeed, 
+		physx::PxArticulationAxis::Enum JointAxis = physx::PxArticulationAxis::Enum::eSWING2);
 
 	/// TODO: Add options to this for different styled joints
 	/// PosDrive should probably be a parameter
-	void ConfigureJoint();
+	void ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis);
 	void Activate(float TimePassed);
 	void Update();
 	void Draw(mat4 ViewProjection);

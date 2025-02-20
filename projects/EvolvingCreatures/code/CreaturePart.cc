@@ -1,11 +1,13 @@
 #include "CreaturePart.h"
 #include "RandomUtils.h"
 
-CreaturePart::CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags) : mPhysicsMaterial(PhysicsMaterial), mShapeFlags(ShapeFlags)
+CreaturePart::CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, float MaxJointVel, float JointOscillationSpeed) : 
+	mPhysicsMaterial(PhysicsMaterial), 
+	mShapeFlags(ShapeFlags), 
+	mMaxJointVel(MaxJointVel), 
+	mJointOscillationSpeed(JointOscillationSpeed)
 {
 	/// Intentionally left blank
-	mMaxVel = RandomFloat(20);
-	mOscillationSpeed = RandomFloat(10);
 }
 
 void CreaturePart::AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node)
@@ -18,9 +20,10 @@ void CreaturePart::AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNo
 }
 
 CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
-	physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition)
+	physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition, float MaxJointVel, float JointOscillationSpeed, 
+	physx::PxArticulationAxis::Enum JointAxis)
 {
-	CreaturePart* NewPart = new CreaturePart(PhysicsMaterial, ShapeFlags);
+	CreaturePart* NewPart = new CreaturePart(PhysicsMaterial, ShapeFlags, MaxJointVel, JointOscillationSpeed);
 	NewPart->mLink = Articulation->createLink(mLink, physx::PxTransform(physx::PxIdentity));
 	NewPart->AddBoxShape(Physics, Scale, Node);
 
@@ -32,7 +35,7 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 	NewPart->mJointPosition = JointPosition;
 	NewPart->mRelativePosition = RelativePosition;
 
-	NewPart->ConfigureJoint();
+	NewPart->ConfigureJoint(JointAxis);
 	
 	mChildren.push_back(NewPart);
 
@@ -41,10 +44,11 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 
 /// TODO: Add options to this for different styled joints
 /// PosDrive should probably be a parameter
-void CreaturePart::ConfigureJoint()
+void CreaturePart::ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis)
 {
 	/// This sets the joint axis to either eTWIST, eSWING1, or eSWING2
-	mJointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
+	//mJointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
+	mJointAxis = JointAxis;
 
 	/// Configure the joint type and motion, limited motion
 	mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
@@ -69,7 +73,7 @@ void CreaturePart::ConfigureJoint()
 
 void CreaturePart::Activate(float TimePassed)
 {
-	mJoint->setDriveVelocity(mJointAxis, mMaxVel * sin(mOscillationSpeed * TimePassed));
+	mJoint->setDriveVelocity(mJointAxis, mMaxJointVel * sin(mJointOscillationSpeed * TimePassed));
 }
 
 void CreaturePart::Update()

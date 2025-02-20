@@ -7,7 +7,7 @@ Creature::Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial
 	//mArticulation->setArticulationFlag(physx::PxArticulationFlag::eDISABLE_SELF_COLLISION, true);
 
 	//mRootPart = new CreaturePart(this, PhysicsMaterial, ShapeFlags);
-	mRootPart = new CreaturePart(PhysicsMaterial, ShapeFlags);
+	mRootPart = new CreaturePart(PhysicsMaterial, ShapeFlags, 0, 0);
 	mRootPart->mLink = mArticulation->createLink(NULL, physx::PxTransform(physx::PxIdentity));
 
 	mRootPart->AddBoxShape(Physics, Scale, Node);
@@ -120,7 +120,11 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 		break;
 	}
 
-	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, RandomPointOnParent);
+	float MaxJointVel = RandomFloat(20);
+	float JointOscillationSpeed = RandomFloat(10);
+	physx::PxArticulationAxis::Enum JointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
+
+	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, RandomPointOnParent, MaxJointVel, JointOscillationSpeed, JointAxis);
 }
 
 void Creature::SetPosition(vec3 Position)
@@ -187,7 +191,8 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics)
 		{
 			/// TODO: Add in random mutations for the scale, position, and jointposition
 			/// and whatever else you'd like
-			CreaturePart* NewPart = CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, ChildPart->mScale, ChildPart->mRelativePosition, ChildPart->mJointPosition);
+			CreaturePart* NewPart = CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, ChildPart->mScale, 
+																ChildPart->mRelativePosition, ChildPart->mJointPosition, ChildPart->mMaxJointVel, ChildPart->mJointOscillationSpeed, ChildPart->mJointAxis);
 
 			PartsToLookAt.push_back(ChildPart);
 			MutatedPartsToLookAt.push_back(NewPart);
