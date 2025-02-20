@@ -20,6 +20,10 @@ public:
 	vec3 mJointPosition;
 	vec3 mRelativePosition;
 
+	/// These values are for the activation
+	float mMaxVel = 10;
+	float mOscillationSpeed = 2;
+
 	CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags);
 
 	void AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node);
@@ -30,7 +34,7 @@ public:
 	/// TODO: Add options to this for different styled joints
 	/// PosDrive should probably be a parameter
 	void ConfigureJoint();
-	void Activate(float Force);
+	void Activate(float TimePassed);
 	void Update();
 	void Draw(mat4 ViewProjection);
 };

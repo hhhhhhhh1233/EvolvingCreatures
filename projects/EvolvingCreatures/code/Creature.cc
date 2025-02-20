@@ -143,14 +143,14 @@ void Creature::Update()
 	mRootPart->Update();
 }
 
-void Creature::Activate(float NewVel)
+void Creature::Activate(float TimePassed)
 {
 	std::vector<CreaturePart*> Parts = GetAllParts();
 	for (auto& Part : Parts)
 	{
 		/// NOTE: This check exists since the root node does not have a joint, all other parts should absolutely have joints though
 		if (Part->mJoint != nullptr)
-			Part->Activate(NewVel);
+			Part->Activate(TimePassed);
 	}
 }
 
@@ -185,8 +185,8 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics)
 
 		for (auto ChildPart : CurrentSelfPart->mChildren)
 		{
-			/// TODO: All of the positions at the end are mScale cause I'm lazy, but they should
-			/// be the relative position and the joint position which are not saved as of yet
+			/// TODO: Add in random mutations for the scale, position, and jointposition
+			/// and whatever else you'd like
 			CreaturePart* NewPart = CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, ChildPart->mScale, ChildPart->mRelativePosition, ChildPart->mJointPosition);
 
 			PartsToLookAt.push_back(ChildPart);

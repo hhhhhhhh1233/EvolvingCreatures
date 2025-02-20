@@ -4,6 +4,8 @@
 CreaturePart::CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags) : mPhysicsMaterial(PhysicsMaterial), mShapeFlags(ShapeFlags)
 {
 	/// Intentionally left blank
+	mMaxVel = RandomFloat(20);
+	mOscillationSpeed = RandomFloat(10);
 }
 
 void CreaturePart::AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node)
@@ -65,9 +67,9 @@ void CreaturePart::ConfigureJoint()
 	//mJoint->setDriveTarget(physx::PxArticulationAxis::eSWING2, 0);
 }
 
-void CreaturePart::Activate(float NewVel)
+void CreaturePart::Activate(float TimePassed)
 {
-	mJoint->setDriveVelocity(mJointAxis, NewVel);
+	mJoint->setDriveVelocity(mJointAxis, mMaxVel * sin(mOscillationSpeed * TimePassed));
 }
 
 void CreaturePart::Update()

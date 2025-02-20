@@ -353,14 +353,11 @@ ExampleApp::Run()
 		mAccumulator += deltaseconds;
 		if (mAccumulator > mStepSize)
 		{
-			float MaxVel = 10;
-			float OscillationSpeed = 2;
-
 			if (bActiveCreature)
 			{
-				NewCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
-				MutatedCreature->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
-				GenMan->Activate(MaxVel * sin(OscillationSpeed * timesincestart));
+				NewCreature->Activate(timesincestart);
+				MutatedCreature->Activate(timesincestart);
+				GenMan->Activate(timesincestart);
 			}
 
 			mScene->simulate(mStepSize);

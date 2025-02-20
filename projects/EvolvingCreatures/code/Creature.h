@@ -25,7 +25,7 @@ public:
 	void RemoveFromScene(physx::PxScene* Scene);
 
 	void Update();
-	void Activate(float Force);
+	void Activate(float TimePassed);
 	void Draw(mat4 ViewProjection);
 
 	void EnableGravity(bool NewState);
