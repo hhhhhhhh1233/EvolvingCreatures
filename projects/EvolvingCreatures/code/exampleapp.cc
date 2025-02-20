@@ -272,7 +272,7 @@ ExampleApp::Run()
 
 	NewCreature->AddToScene(mScene);
 
-	Creature* MutatedCreature = NewCreature->GetMutatedCreature(mPhysics);
+	Creature* MutatedCreature = NewCreature->GetMutatedCreature(mPhysics, 1.5, 0.5);
 	MutatedCreature->SetPosition(vec3(5, 10, 0));
 	MutatedCreature->AddToScene(mScene);
 
@@ -345,6 +345,13 @@ ExampleApp::Run()
 			NewCreature->AddToScene(mScene);
 
 			NewCreature->EnableGravity(bSimulateGravity);
+
+
+			MutatedCreature->RemoveFromScene(mScene);
+			delete MutatedCreature;
+			MutatedCreature = NewCreature->GetMutatedCreature(mPhysics, 0.5, 0.3);
+			MutatedCreature->SetPosition(vec3(10, 10, 0));
+			MutatedCreature->AddToScene(mScene);
 
 			bResetCreature = false;
 			std::cout << "\n----------------------------------------";
@@ -448,7 +455,7 @@ ExampleApp::Run()
 
 		NewCreature->Draw(viewProjection);
 		MutatedCreature->Draw(viewProjection);
-		GenMan->DrawCreatures(viewProjection);
+		//GenMan->DrawCreatures(viewProjection);
 
 		Quad.draw(viewProjection);
 

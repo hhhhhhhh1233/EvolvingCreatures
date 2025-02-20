@@ -120,7 +120,7 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 		break;
 	}
 
-	float MaxJointVel = RandomFloat(20);
+	float MaxJointVel = RandomFloatInRange(-20, 20);
 	float JointOscillationSpeed = RandomFloat(10);
 	physx::PxArticulationAxis::Enum JointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
 
@@ -172,12 +172,27 @@ void Creature::EnableGravity(bool NewState)
 	}
 }
 
-Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics)
+Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float MutationChance, float MutationSeverity)
 {
-	Creature* NewCreature = new Creature(Physics, mRootPart->mPhysicsMaterial, mRootPart->mShapeFlags, mRootPart->mNode, mRootPart->mScale);
+	float MinMutationAmount = 1 - MutationSeverity;
+	float MaxMutationAmount = 1 + MutationSeverity;
+
+	vec3 RootScale = mRootPart->mScale;
+	/// Randomize scale
+	if (RandomFloat() < MutationChance)
+	{
+		RootScale.x *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+		RootScale.y *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+		RootScale.z *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+	}
+
+	Creature* NewCreature = new Creature(Physics, mRootPart->mPhysicsMaterial, mRootPart->mShapeFlags, mRootPart->mNode, RootScale);
+
+
 
 	std::vector<CreaturePart*> PartsToLookAt = { mRootPart };
 	std::vector<CreaturePart*> MutatedPartsToLookAt = { NewCreature->mRootPart };
+
 
 	while (PartsToLookAt.size() > 0)
 	{
@@ -191,8 +206,60 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics)
 		{
 			/// TODO: Add in random mutations for the scale, position, and jointposition
 			/// and whatever else you'd like
-			CreaturePart* NewPart = CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, ChildPart->mScale, 
-																ChildPart->mRelativePosition, ChildPart->mJointPosition, ChildPart->mMaxJointVel, ChildPart->mJointOscillationSpeed, ChildPart->mJointAxis);
+
+			vec3 MutatedScale = ChildPart->mScale;
+			vec3 MutatedRelativePosition = ChildPart->mRelativePosition;
+			vec3 MutatedJointPosition = ChildPart->mJointPosition;
+			float MutatedMaxJointVel = ChildPart->mMaxJointVel;
+			float MutatedJointOscillationSpeed = ChildPart->mJointOscillationSpeed;
+			physx::PxArticulationAxis::Enum MutatedJointAxis = ChildPart->mJointAxis;
+
+			/// Randomize scale
+			if (RandomFloat() < MutationChance)
+			{
+				MutatedScale.x *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+				MutatedScale.y *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+				MutatedScale.z *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+
+				//vec3 ChildOfThisRelativeDiff = (MutatedScale - ChildPart->mScale) * ChildPart->mNormal;
+			}
+
+			///// Randomize position
+			//if (RandomFloat() < MutationChance)
+			//{
+			//	MutatedRelativePosition.x *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+			//	MutatedRelativePosition.y *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+			//	MutatedRelativePosition.z *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+			//}
+
+			///// Randomize joint position
+			//if (RandomFloat() < MutationChance)
+			//{
+			//	MutatedJointPosition.x *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+			//	MutatedJointPosition.y *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+			//	MutatedJointPosition.z *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+			//}
+
+			/// Randomize joint type
+			if (RandomFloat() < MutationChance)
+			{
+				MutatedJointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
+			}
+
+			/// Randomize joint velocity
+			if (RandomFloat() < MutationChance)
+			{
+				MutatedMaxJointVel *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+			}
+
+			/// Randomize joint oscillation
+			if (RandomFloat() < MutationChance)
+			{
+				MutatedJointOscillationSpeed *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
+			}
+
+			CreaturePart* NewPart = CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, MutatedScale, 
+																MutatedRelativePosition, MutatedJointPosition, MutatedMaxJointVel, MutatedJointOscillationSpeed, MutatedJointAxis);
 
 			PartsToLookAt.push_back(ChildPart);
 			MutatedPartsToLookAt.push_back(NewPart);
