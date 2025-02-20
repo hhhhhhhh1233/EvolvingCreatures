@@ -17,6 +17,8 @@ public:
 
 	GraphicsNode mNode;
 	vec3 mScale;
+	vec3 mJointPosition;
+	vec3 mRelativePosition;
 
 	CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags);
 

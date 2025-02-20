@@ -26,6 +26,10 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 	NewPart->mJoint->setParentPose(physx::PxTransform({JointPosition.x, JointPosition.y, JointPosition.z}));
 	NewPart->mJoint->setChildPose(physx::PxTransform({JointPosition.x - RelativePosition.x, JointPosition.y - RelativePosition.y, JointPosition.z - RelativePosition.z}));
 
+	/// Set these values so we can fetch them when we mutate the creature
+	NewPart->mJointPosition = JointPosition;
+	NewPart->mRelativePosition = RelativePosition;
+
 	NewPart->ConfigureJoint();
 	
 	mChildren.push_back(NewPart);
