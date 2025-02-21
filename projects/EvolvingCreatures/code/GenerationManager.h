@@ -9,22 +9,30 @@ struct CreatureStats
 	Creature* mCreature;
 	float mFitness;
 	physx::PxScene* mScene;
+	float mAverageSpeed;
+	float mSumHorizontalSpeed;
 
 	CreatureStats(Creature* Crea, physx::PxScene* Scene)
 	{
 		mCreature = Crea;
 		mFitness = 0;
 		mScene = Scene;
+		mAverageSpeed = 0;
+		mSumHorizontalSpeed = 0;
 	}
-
 };
 
 class GenerationManager
 {
 public:
-	unsigned int mGenereationSize = 50;
+	unsigned int mGenerationSize = 50;
 	std::vector<CreatureStats*> mCreatures;
 	physx::PxPhysics* mPhysics;
+
+	/// Variables for keeping track of how long an evaluation period was, in seconds
+	bool bEvaluating = false;
+	std::chrono::steady_clock::time_point mEvaluationStartTime;
+	float mEvaluationDuration;
 
 	GenerationManager(physx::PxPhysics* Physics);
 
@@ -36,12 +44,8 @@ public:
 	void DrawCreatures(mat4 ViewProjection);
 	void Activate(float Vel);
 
-	/// This will simulate the creatures and set the fitness value for the creature
-	void RunGeneration();
-
-	void StartGeneration();
-
-	void EndGeneration();
+	void StartEvalutation();
+	void EndEvaluation();
 
 	/// Remove creatures that don't have enough
 	void CullGeneration(float MinimumFitnessValue);

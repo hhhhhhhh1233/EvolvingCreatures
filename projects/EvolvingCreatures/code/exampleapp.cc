@@ -291,7 +291,7 @@ ExampleApp::Run()
 	bool bActiveCreature = true;
 	bool bSimulateGravity = true;
 	int BodyPartsNum = 2;
-	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature]()
+	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan]()
 	{
 		bool show = true;
 		// create a new window
@@ -313,6 +313,16 @@ ExampleApp::Run()
 		if (ImGui::Button("Regenerate Creature"))
 		{
 			bResetCreature = true;
+		}
+
+		if (!GenMan->bEvaluating && ImGui::Button("Start Evaluation"))
+		{
+			GenMan->StartEvalutation();
+		}
+
+		if (GenMan->bEvaluating && ImGui::Button("End Evaluation"))
+		{
+			GenMan->EndEvaluation();
 		}
 
 		// close window
@@ -453,9 +463,9 @@ ExampleApp::Run()
 
 		sphere.draw(viewProjection);
 
-		NewCreature->Draw(viewProjection);
-		MutatedCreature->Draw(viewProjection);
-		//GenMan->DrawCreatures(viewProjection);
+		//NewCreature->Draw(viewProjection);
+		//MutatedCreature->Draw(viewProjection);
+		GenMan->DrawCreatures(viewProjection);
 
 		Quad.draw(viewProjection);
 
