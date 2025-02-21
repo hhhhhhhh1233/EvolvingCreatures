@@ -19,6 +19,7 @@ public:
 	vec3 mScale;
 	vec3 mJointPosition;
 	vec3 mRelativePosition;
+	vec3 mParentNormal;
 
 	/// These values are for the activation
 	float mMaxJointVel = 10;

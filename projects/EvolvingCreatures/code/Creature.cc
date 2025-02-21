@@ -221,7 +221,24 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 				MutatedScale.y *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
 				MutatedScale.z *= RandomFloatInRange(MinMutationAmount, MaxMutationAmount);
 
-				//vec3 ChildOfThisRelativeDiff = (MutatedScale - ChildPart->mScale) * ChildPart->mNormal;
+				/// This part is adjust the position of the child and the joint based on how the creature mutated scale
+				{
+					if (ChildPart->mParentNormal.x != 0)
+					{
+						MutatedRelativePosition.x = ChildPart->mParentNormal.x * (MutatedScale.x + CurrentMutatedPart->mScale.x);
+						MutatedJointPosition.x = ChildPart->mParentNormal.x * CurrentMutatedPart->mScale.x;
+					}
+					if (ChildPart->mParentNormal.y != 0)
+					{
+						MutatedRelativePosition.y = ChildPart->mParentNormal.y * (MutatedScale.y + CurrentMutatedPart->mScale.y);
+						MutatedJointPosition.y = ChildPart->mParentNormal.y * CurrentMutatedPart->mScale.y;
+					}
+					if (ChildPart->mParentNormal.z != 0)
+					{
+						MutatedRelativePosition.z = ChildPart->mParentNormal.z * (MutatedScale.z + CurrentMutatedPart->mScale.z);
+						MutatedJointPosition.z = ChildPart->mParentNormal.z * CurrentMutatedPart->mScale.z;
+					}
+				}
 			}
 
 			///// Randomize position
@@ -264,6 +281,12 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 			PartsToLookAt.push_back(ChildPart);
 			MutatedPartsToLookAt.push_back(NewPart);
 		}
+	}
+
+	/// Random chance to add new part
+	if (RandomFloat() < MutationChance)
+	{
+		NewCreature->AddRandomPart(Physics, NewCreature->mRootPart->mPhysicsMaterial, NewCreature->mRootPart->mShapeFlags, NewCreature->mRootPart->mNode);
 	}
 
 	return NewCreature;

@@ -35,6 +35,22 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 	NewPart->mJointPosition = JointPosition;
 	NewPart->mRelativePosition = RelativePosition;
 
+	/// All this so that I don't have to pass an extra variable
+	{
+		float xVal = 0;
+		float yVal = 0;
+		float zVal = 0;
+
+		if (JointPosition.x != 0)
+			xVal = (JointPosition.x / abs(JointPosition.x)) * (abs(JointPosition.x) == mScale.x);
+		if (JointPosition.y != 0)
+			yVal = (JointPosition.y / abs(JointPosition.y)) * (abs(JointPosition.y) == mScale.y);
+		if (JointPosition.z != 0)
+			zVal = (JointPosition.z / abs(JointPosition.z)) * (abs(JointPosition.z) == mScale.z);
+
+		NewPart->mParentNormal = vec3(xVal, yVal, zVal);
+	}
+
 	NewPart->ConfigureJoint(JointAxis);
 	
 	mChildren.push_back(NewPart);
