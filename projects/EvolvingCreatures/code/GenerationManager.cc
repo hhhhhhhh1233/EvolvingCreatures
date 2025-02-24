@@ -126,7 +126,7 @@ static bool IsSorted(const std::vector<std::pair<Creature*, float>>& Arr)
 {
 	for (int i = 0; i < Arr.size() - 1; i++)
 	{
-		if (Arr[i + 1].second < Arr[i].second)
+		if (Arr[i + 1].second > Arr[i].second)
 			return false;
 	}
 	return true;
@@ -147,7 +147,7 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 		for (int i = 0; i < SortedCreatures.size(); i++)
 		{
 			int j = i;
-			while (j < SortedCreatures.size() - 1 && SortedCreatures[j].second > SortedCreatures[j + 1].second)
+			while (j < SortedCreatures.size() - 1 && SortedCreatures[j].second < SortedCreatures[j + 1].second)
 				j++;
 			std::pair<Creature*, float> Temp = SortedCreatures[j];
 			SortedCreatures[j] = SortedCreatures[i];
