@@ -225,6 +225,7 @@ void GenerationManager::EvolveCreatures()
 	while (mCreatures.size() < mGenerationSize)
 	{
 		Creature* Creat = mCreatures[i]->mCreature->GetMutatedCreature(mPhysics, MutationChance, MutationSeverity);
+		Creat->SetPosition(vec3(0, 10, 0));
 
 		/// ----------------------------------------
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
@@ -262,6 +263,9 @@ void GenerationManager::EvolveCreatures()
 		/// ----------------------------------------
 
 		CreatureStats* a = new CreatureStats(Creat, Scene);
+
+		Creat->AddToScene(Scene);
+
 		mCreatures.push_back(a);
 
 		i = (i + 1) % NumberOfCreaturesToEvolve;
