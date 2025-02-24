@@ -92,22 +92,14 @@ public:
 
 	float& operator[](const int i)
 	{
-		if (i == 0)
-			return x;
-		else if (i == 1)
-			return y;
-		else if (i == 2)
-			return z;
+		assert(i >= 0 && i <= 2);
+		return *(&x + i);
 	}
 
 	const float& operator[](const int i) const
 	{
-		if (i == 0)
-			return x;
-		else if (i == 1)
-			return y;
-		else if (i == 2)
-			return z;
+		assert(i >= 0 && i <= 2);
+		return *(&x + i);
 	}
 };
 
