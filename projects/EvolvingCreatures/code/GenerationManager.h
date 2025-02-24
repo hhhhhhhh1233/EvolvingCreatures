@@ -9,14 +9,16 @@ struct CreatureStats
 	Creature* mCreature;
 	float mFitness;
 	physx::PxScene* mScene;
+	physx::PxRigidStatic* mPlaneCollision;
 	float mAverageSpeed;
 	float mSumHorizontalSpeed;
 
-	CreatureStats(Creature* Crea, physx::PxScene* Scene)
+	CreatureStats(Creature* Crea, physx::PxScene* Scene, physx::PxRigidStatic* PlaneCollision)
 	{
 		mCreature = Crea;
 		mFitness = 0;
 		mScene = Scene;
+		mPlaneCollision = PlaneCollision;
 		mAverageSpeed = 0;
 		mSumHorizontalSpeed = 0;
 	}
@@ -51,5 +53,5 @@ public:
 	void CullGeneration(int NumberToKeep);
 
 	/// Mutate the creatures based on the ones that were fit to fill up the mCreatures vector to the set generation size
-	void EvolveCreatures();
+	void EvolveCreatures(float MutationChance, float MutationSeverity);
 };

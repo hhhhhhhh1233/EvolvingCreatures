@@ -53,7 +53,7 @@ void GenerationManager::GenerateCreatures(GraphicsNode Node)
 
 		reature->AddToScene(Scene);
 			
-		CreatureStats* NewCreature = new CreatureStats(reature, Scene);
+		CreatureStats* NewCreature = new CreatureStats(reature, Scene, PlaneCollision);
 		mCreatures.push_back(NewCreature);
 	}
 }
@@ -140,6 +140,8 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 	{
 		SortedCreatures.push_back({ creature->mCreature, creature->mFitness });
 		creature->mCreature->RemoveFromScene(creature->mScene);
+		creature->mScene->release();
+		creature->mPlaneCollision->release();
 	}
 
 	while (!IsSorted(SortedCreatures))
@@ -204,17 +206,17 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 
 		SortedCreatures[i].first->AddToScene(Scene);
 
-		CreatureStats* a = new CreatureStats(SortedCreatures[i].first, Scene);
+		CreatureStats* a = new CreatureStats(SortedCreatures[i].first, Scene, PlaneCollision);
 
 		mCreatures.push_back(a);
 	}
 }
 
-void GenerationManager::EvolveCreatures()
+void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeverity)
 {
-	/// HAVE THESE BE PASSED IN INSTEAD
-	float MutationChance = 0.3;
-	float MutationSeverity = 0.5;
+	///// HAVE THESE BE PASSED IN INSTEAD
+	//float MutationChance = 0.3;
+	//float MutationSeverity = 0.5;
 
 	physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
 	physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
@@ -262,7 +264,7 @@ void GenerationManager::EvolveCreatures()
 		/// [END] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
 
-		CreatureStats* a = new CreatureStats(Creat, Scene);
+		CreatureStats* a = new CreatureStats(Creat, Scene, PlaneCollision);
 
 		Creat->AddToScene(Scene);
 

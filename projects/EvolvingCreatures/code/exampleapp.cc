@@ -315,23 +315,30 @@ ExampleApp::Run()
 		//	bResetCreature = true;
 		//}
 
+		static int GenerationSurvivors = 5;
+		static float MutationChance = 0.3;
+		static float MutationSeverity = 0.3;
+
+		ImGui::DragInt("Per Gen", &GenerationSurvivors, 1, 5, GenMan->mGenerationSize);
+		ImGui::DragFloat("Mutation Chance", &MutationChance, 0.05, 0, 1);
+		ImGui::DragFloat("Mutation Severity", &MutationSeverity, 0.05, 0, 1);
+
 		if (!GenMan->bEvaluating && ImGui::Button("Start Evaluation"))
 		{
 			GenMan->StartEvalutation();
 		}
 
-		if (GenMan->bEvaluating && ImGui::Button("End Evaluation"))
+		if (GenMan->bEvaluating)
 		{
-			GenMan->EndEvaluation();
+			float EvalTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - GenMan->mEvaluationStartTime).count() / 1000.0f;
+			ImGui::Text("Current Time %.3f", EvalTime);
 		}
 
-		if (!GenMan->bEvaluating)
+		if (GenMan->bEvaluating && ImGui::Button("Next Generation"))
 		{
-			if (ImGui::Button("Cull Generation"))
-				GenMan->CullGeneration(5);
-			if (ImGui::Button("Evolve Creatures"))
-				GenMan->EvolveCreatures();
-
+			GenMan->EndEvaluation();
+			GenMan->CullGeneration(GenerationSurvivors);
+			GenMan->EvolveCreatures(MutationChance, MutationSeverity);
 		}
 
 		// close window
