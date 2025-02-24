@@ -10,6 +10,15 @@ CreaturePart::CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFla
 	/// Intentionally left blank
 }
 
+CreaturePart::~CreaturePart()
+{
+	for (auto& Child : mChildren)
+	{
+		delete Child;
+	}
+	mLink->release();
+}
+
 void CreaturePart::AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node)
 {
 	physx::PxShape* shape = Physics->createShape(physx::PxBoxGeometry({Scale.x, Scale.y, Scale.z}), &mPhysicsMaterial, 1, true, mShapeFlags);

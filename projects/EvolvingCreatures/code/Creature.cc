@@ -15,11 +15,8 @@ Creature::Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial
 
 Creature::~Creature()
 {
-	std::vector<CreaturePart*> Parts = GetAllParts();
-	for (auto Part : Parts)
-	{
-		delete Part;
-	}
+	delete mRootPart;
+	mArticulation->release();
 }
 
 CreaturePart* Creature::GetChildlessPart() const

@@ -26,6 +26,7 @@ public:
 	float mJointOscillationSpeed = 2;
 
 	CreaturePart(physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, float MaxJointVel, float JointOscillationSpeed);
+	~CreaturePart();
 
 	void AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node);
 
