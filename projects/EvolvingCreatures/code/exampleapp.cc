@@ -315,13 +315,13 @@ ExampleApp::Run()
 		//	bResetCreature = true;
 		//}
 
-		static int GenerationSurvivors = 5;
+		static int GenerationSurvivors = 15;
 		static float MutationChance = 0.3;
 		static float MutationSeverity = 0.3;
 
 		ImGui::DragInt("Per Gen", &GenerationSurvivors, 1, 5, GenMan->mGenerationSize);
-		ImGui::DragFloat("Mutation Chance", &MutationChance, 0.05, 0, 1);
-		ImGui::DragFloat("Mutation Severity", &MutationSeverity, 0.05, 0, 1);
+		ImGui::DragFloat("Mutation Chance", &MutationChance, 0.05, 0, 1, "%.2f");
+		ImGui::DragFloat("Mutation Severity", &MutationSeverity, 0.05, 0, 1, "%.2f");
 
 		if (!GenMan->bEvaluating && ImGui::Button("Start Evaluation"))
 		{
@@ -339,6 +339,7 @@ ExampleApp::Run()
 			GenMan->EndEvaluation();
 			GenMan->CullGeneration(GenerationSurvivors);
 			GenMan->EvolveCreatures(MutationChance, MutationSeverity);
+			GenMan->SetPositionOfCreatures(vec3(0, 20, 0));
 		}
 
 		// close window

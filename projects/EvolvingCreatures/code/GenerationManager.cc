@@ -90,6 +90,16 @@ void GenerationManager::DrawCreatures(mat4 ViewProjection)
 	}
 }
 
+void GenerationManager::SetPositionOfCreatures(vec3 Position)
+{
+	for (auto creature : mCreatures)
+	{
+		creature->mCreature->RemoveFromScene(creature->mScene);
+		creature->mCreature->SetPosition(Position);
+		creature->mCreature->AddToScene(creature->mScene);
+	}
+}
+
 void GenerationManager::Activate(float Force)
 {
 	for (auto creature : mCreatures)
@@ -118,10 +128,12 @@ void GenerationManager::EndEvaluation()
 	{
 		creature->mAverageSpeed = creature->mSumHorizontalSpeed / mEvaluationDuration;
 
-		creature->mFitness = creature->mAverageSpeed;
+		//creature->mFitness = creature->mAverageSpeed + creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
+		creature->mFitness = creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
 	}
 }
 
+/// Utility for checking if the creatures are sorted yet by their fitness, only used by cull generation
 static bool IsSorted(const std::vector<std::pair<Creature*, float>>& Arr)
 {
 	for (int i = 0; i < Arr.size() - 1; i++)
@@ -140,8 +152,8 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 	{
 		SortedCreatures.push_back({ creature->mCreature, creature->mFitness });
 		creature->mCreature->RemoveFromScene(creature->mScene);
-		creature->mScene->release();
 		creature->mPlaneCollision->release();
+		creature->mScene->release();
 	}
 
 	while (!IsSorted(SortedCreatures))
@@ -164,6 +176,7 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 	SortedCreatures.erase(SortedCreatures.begin() + NumberToKeep, SortedCreatures.end());
 
 	mCreatures.erase(mCreatures.begin(), mCreatures.end());
+
 	for (int i = 0; i < SortedCreatures.size(); i++)
 	{
 		physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
@@ -214,10 +227,6 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 
 void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeverity)
 {
-	///// HAVE THESE BE PASSED IN INSTEAD
-	//float MutationChance = 0.3;
-	//float MutationSeverity = 0.5;
-
 	physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
 	physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
 

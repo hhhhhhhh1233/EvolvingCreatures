@@ -44,6 +44,7 @@ public:
 	void Simulate(float StepSize);
 	void UpdateCreatures();
 	void DrawCreatures(mat4 ViewProjection);
+	void SetPositionOfCreatures(vec3 Position);
 	void Activate(float Vel);
 
 	void StartEvalutation();
