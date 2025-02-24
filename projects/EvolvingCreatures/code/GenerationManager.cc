@@ -122,7 +122,17 @@ void GenerationManager::EndEvaluation()
 	}
 }
 
-void GenerationManager::CullGeneration(float MinimumFitnessValue)
+static bool IsSorted(const std::vector<std::pair<Creature*, float>>& Arr)
+{
+	for (int i = 0; i < Arr.size() - 1; i++)
+	{
+		if (Arr[i + 1].second < Arr[i].second)
+			return false;
+	}
+	return true;
+}
+
+void GenerationManager::CullGeneration(int NumberToKeep)
 {
 	std::vector<std::pair<Creature*, float>> SortedCreatures;
 
@@ -132,28 +142,27 @@ void GenerationManager::CullGeneration(float MinimumFitnessValue)
 		creature->mCreature->RemoveFromScene(creature->mScene);
 	}
 
-	for (int i = 0; i < SortedCreatures.size(); i++)
+	while (!IsSorted(SortedCreatures))
 	{
-		for (int j = i; j < SortedCreatures.size(); j++)
+		for (int i = 0; i < SortedCreatures.size(); i++)
 		{
-			if (SortedCreatures[j].second > SortedCreatures[i].second)
-				break;
+			int j = i;
+			while (j < SortedCreatures.size() - 1 && SortedCreatures[j].second > SortedCreatures[j + 1].second)
+				j++;
+			std::pair<Creature*, float> Temp = SortedCreatures[j];
+			SortedCreatures[j] = SortedCreatures[i];
+			SortedCreatures[i] = Temp;
 		}
-		auto p = SortedCreatures[i];
-		SortedCreatures.erase(SortedCreatures.begin() + i);
-		SortedCreatures.insert(SortedCreatures.begin() + i, p);
 	}
 
-	/// Delete the unwanted creatures
-	int NumberToKeep = 5;
 	for (int i = NumberToKeep; i < SortedCreatures.size(); i++)
 	{
 		delete SortedCreatures[i].first;
 	}
-	SortedCreatures.erase(SortedCreatures.begin() + NumberToKeep, SortedCreatures.end() - 1);
+	SortedCreatures.erase(SortedCreatures.begin() + NumberToKeep, SortedCreatures.end());
 
-	mCreatures.erase(mCreatures.begin(), mCreatures.end() - 1);
-	for (auto p : SortedCreatures)
+	mCreatures.erase(mCreatures.begin(), mCreatures.end());
+	for (int i = 0; i < SortedCreatures.size(); i++)
 	{
 		physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
 		physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
@@ -193,7 +202,11 @@ void GenerationManager::CullGeneration(float MinimumFitnessValue)
 		/// [END] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
 
-		p.first->AddToScene(Scene);
+		SortedCreatures[i].first->AddToScene(Scene);
+
+		CreatureStats* a = new CreatureStats(SortedCreatures[i].first, Scene);
+
+		mCreatures.push_back(a);
 	}
 }
 

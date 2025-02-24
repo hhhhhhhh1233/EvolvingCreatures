@@ -297,23 +297,23 @@ ExampleApp::Run()
 		// create a new window
 		ImGui::Begin("Evolving Creatures Options", &show, ImGuiWindowFlags_NoSavedSettings);
 
-		ImGui::Checkbox("Attach Camera to Creature", &bAttachCam);
+		//ImGui::Checkbox("Attach Camera to Creature", &bAttachCam);
 
-		ImGui::Checkbox("Simulate Creature", &bActiveCreature);
+		//ImGui::Checkbox("Simulate Creature", &bActiveCreature);
 
-		if (ImGui::Button("Toggle Gravity"))
-		{
-			NewCreature->EnableGravity(!bSimulateGravity);
-			bSimulateGravity = !bSimulateGravity;
-		}
+		//if (ImGui::Button("Toggle Gravity"))
+		//{
+		//	NewCreature->EnableGravity(!bSimulateGravity);
+		//	bSimulateGravity = !bSimulateGravity;
+		//}
 
-		ImGui::InputInt("Number of limbs", &BodyPartsNum);
-		BodyPartsNum = BodyPartsNum < 0 ? 0 : BodyPartsNum > 254 ? 254 : BodyPartsNum;
+		//ImGui::InputInt("Number of limbs", &BodyPartsNum);
+		//BodyPartsNum = BodyPartsNum < 0 ? 0 : BodyPartsNum > 254 ? 254 : BodyPartsNum;
 
-		if (ImGui::Button("Regenerate Creature"))
-		{
-			bResetCreature = true;
-		}
+		//if (ImGui::Button("Regenerate Creature"))
+		//{
+		//	bResetCreature = true;
+		//}
 
 		if (!GenMan->bEvaluating && ImGui::Button("Start Evaluation"))
 		{
@@ -323,6 +323,15 @@ ExampleApp::Run()
 		if (GenMan->bEvaluating && ImGui::Button("End Evaluation"))
 		{
 			GenMan->EndEvaluation();
+		}
+
+		if (!GenMan->bEvaluating)
+		{
+			if (ImGui::Button("Cull Generation"))
+				GenMan->CullGeneration(5);
+			if (ImGui::Button("Evolve Creatures"))
+				GenMan->EvolveCreatures();
+
 		}
 
 		// close window

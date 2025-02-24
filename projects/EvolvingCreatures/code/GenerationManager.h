@@ -48,7 +48,7 @@ public:
 	void EndEvaluation();
 
 	/// Remove creatures that don't have enough
-	void CullGeneration(float MinimumFitnessValue);
+	void CullGeneration(int NumberToKeep);
 
 	/// Mutate the creatures based on the ones that were fit to fill up the mCreatures vector to the set generation size
 	void EvolveCreatures();
