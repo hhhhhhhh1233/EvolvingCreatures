@@ -30,13 +30,13 @@ public:
 
 	void AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node);
 
-	CreaturePart* AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial,
-		physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition, float MaxJointVel, float JointOscillationSpeed, 
-		physx::PxArticulationAxis::Enum JointAxis = physx::PxArticulationAxis::Enum::eSWING2);
+	CreaturePart* AddChild(	physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
+							physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition, float MaxJointVel, float JointOscillationSpeed, 
+							physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive);
 
 	/// TODO: Add options to this for different styled joints
 	/// PosDrive should probably be a parameter
-	void ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis);
+	void ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive);
 	void Activate(float TimePassed);
 	void Update();
 	void Draw(mat4 ViewProjection);

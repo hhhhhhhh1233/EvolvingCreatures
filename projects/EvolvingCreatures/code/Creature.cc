@@ -121,7 +121,13 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	float JointOscillationSpeed = RandomFloat(10);
 	physx::PxArticulationAxis::Enum JointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
 
-	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, RandomPointOnParent, MaxJointVel, JointOscillationSpeed, JointAxis);
+	physx::PxArticulationDrive posDrive;
+	posDrive.stiffness = RandomInt(100);
+	posDrive.damping = RandomInt(10);
+	posDrive.maxForce = RandomInt(1000);
+	posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
+
+	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, RandomPointOnParent, MaxJointVel, JointOscillationSpeed, JointAxis, posDrive);
 }
 
 void Creature::SetPosition(vec3 Position)
@@ -273,7 +279,8 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 			}
 
 			CreaturePart* NewPart = CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, MutatedScale, 
-																MutatedRelativePosition, MutatedJointPosition, MutatedMaxJointVel, MutatedJointOscillationSpeed, MutatedJointAxis);
+																MutatedRelativePosition, MutatedJointPosition, MutatedMaxJointVel, MutatedJointOscillationSpeed, MutatedJointAxis, 
+																ChildPart->mJoint->getDriveParams(ChildPart->mJointAxis));
 
 			PartsToLookAt.push_back(ChildPart);
 			MutatedPartsToLookAt.push_back(NewPart);

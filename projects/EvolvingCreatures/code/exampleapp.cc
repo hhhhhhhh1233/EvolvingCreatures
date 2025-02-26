@@ -264,11 +264,11 @@ ExampleApp::Run()
 	vec3 FirstChildJointPosition(0, RootScale.y, 0);
 	vec3 ChildJointPosition(0, ChildScale.y, 0);
 
-	CreaturePart* a = NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, FirstChildPosition, FirstChildJointPosition, 20, 3);
-	CreaturePart* b = a->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
-	CreaturePart* c = b->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
-	CreaturePart* d = c->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
-	CreaturePart* e = d->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
+	//CreaturePart* a = NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, FirstChildPosition, FirstChildJointPosition, 20, 3);
+	//CreaturePart* b = a->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
+	//CreaturePart* c = b->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
+	//CreaturePart* d = c->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
+	//CreaturePart* e = d->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
 
 	NewCreature->AddToScene(mScene);
 
