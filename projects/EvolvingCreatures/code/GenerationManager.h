@@ -3,6 +3,7 @@
 #include "config.h"
 #include "Creature.h"
 #include <PxPhysicsAPI.h>
+#include "render/GraphicsNode.h"
 
 struct CreatureStats
 {
@@ -30,22 +31,46 @@ public:
 	unsigned int mGenerationSize = 50;
 	std::vector<CreatureStats*> mCreatures;
 	physx::PxPhysics* mPhysics;
+	physx::PxDefaultCpuDispatcher* mDispatcher = NULL;
+
+	GraphicsNode mCubeNode;
+
+	/// Variables for keeping track of the generations
+	bool bRunningGenerations = false;
+
+	unsigned int mCurrentGeneration = 0;
+	unsigned int mNumberOfGenerations = 0;
+
+	float mGenerationDurationSeconds = 60.0f;
+	float mCurrentGenerationDuration = 0.0f;
+
+	int mGenerationSurvivors; 
+	float mMutationChance; 
+	float mMutationSeverity;
+
+	bool bFinishedAllGenerations = false;
 
 	/// Variables for keeping track of how long an evaluation period was, in seconds
 	bool bEvaluating = false;
 	std::chrono::steady_clock::time_point mEvaluationStartTime;
 	float mEvaluationDuration;
 
-	GenerationManager(physx::PxPhysics* Physics);
+	std::vector<std::pair<Creature*, float>> mSortedCreatures;
+
+	GenerationManager(physx::PxPhysics* Physics, physx::PxDefaultCpuDispatcher* Dispatcher, GraphicsNode CubeNode);
 
 	/// This will populate the vector above with creatures and scenes with a plane, with mGenerationSize amount of creatures
-	void GenerateCreatures(GraphicsNode Node);
+	void GenerateCreatures(int GenerationSize);
 
 	void Simulate(float StepSize);
 	void UpdateCreatures();
 	void DrawCreatures(mat4 ViewProjection);
+	void DrawFinishedCreatures(mat4 ViewProjection, int CreatureIndex);
 	void SetPositionOfCreatures(vec3 Position);
 	void Activate(float Vel);
+
+	void Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity);
+	void Update(float DeltaTime);
 
 	void StartEvalutation();
 	void EndEvaluation();

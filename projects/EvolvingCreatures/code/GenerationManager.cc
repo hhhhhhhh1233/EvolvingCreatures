@@ -1,26 +1,43 @@
 #include "GenerationManager.h"
+#include "RandomUtils.h"
 
-GenerationManager::GenerationManager(physx::PxPhysics* Physics) : mPhysics(Physics)
+GenerationManager::GenerationManager(physx::PxPhysics* Physics, physx::PxDefaultCpuDispatcher* Dispatcher, GraphicsNode CubeNode) : mPhysics(Physics), mDispatcher(Dispatcher), mCubeNode(CubeNode)
 {
 	/// Intentionally left blank
 }
 
-void GenerationManager::GenerateCreatures(GraphicsNode Node)
+void GenerationManager::GenerateCreatures(int GenerationSize)
 {
+	/// Destroys any creatures that exist in the list already
+	for (int i = 0; i < mCreatures.size(); i++)
+	{
+		mCreatures[i]->mCreature->RemoveFromScene(mCreatures[i]->mScene);
+		delete mCreatures[i]->mCreature;
+		mCreatures[i]->mPlaneCollision->release();
+		mCreatures[i]->mScene->release();
+		delete mCreatures[i];
+	}
+	mCreatures.erase(mCreatures.begin(), mCreatures.end());
+
+	mGenerationSize = GenerationSize;
+	physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
 	for (int i = 0; i < mGenerationSize; i++)
 	{
 		physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
-		physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
-		Creature* reature = new Creature(mPhysics, MaterialPtr, ShapeFlags, Node, vec3(2,1,1));
-		reature->AddRandomPart(mPhysics, MaterialPtr, ShapeFlags, Node);
-		reature->AddRandomPart(mPhysics, MaterialPtr, ShapeFlags, Node);
+
+		Creature* reature = new Creature(mPhysics, MaterialPtr, ShapeFlags, mCubeNode, vec3(RandomFloatInRange(0.5, 3), RandomFloatInRange(0.5, 3), RandomFloatInRange(0.5, 3)));
+
+		int NumberOfBodyParts = RandomIntInRange(1, 4);
+		for (int i = 0; i < NumberOfBodyParts; i++)
+			reature->AddRandomPart(mPhysics, MaterialPtr, ShapeFlags, mCubeNode);
+
 		reature->SetPosition(vec3(0, 10, 0));
 
 		/// ----------------------------------------
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
 
-		physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
+		//physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
 
 		physx::PxTolerancesScale ToleranceScale;
 
@@ -29,8 +46,8 @@ void GenerationManager::GenerateCreatures(GraphicsNode Node)
 
 		physx::PxSceneDesc SceneDesc(ToleranceScale);
 		SceneDesc.gravity = { 0, -9.8, 0 };
-		Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
-		SceneDesc.cpuDispatcher = Dispatcher;
+		//Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+		SceneDesc.cpuDispatcher = mDispatcher;
 		SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
 		SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 		SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
@@ -56,6 +73,8 @@ void GenerationManager::GenerateCreatures(GraphicsNode Node)
 		CreatureStats* NewCreature = new CreatureStats(reature, Scene, PlaneCollision);
 		mCreatures.push_back(NewCreature);
 	}
+
+	MaterialPtr->release();
 }
 
 void GenerationManager::Simulate(float StepSize)
@@ -90,6 +109,14 @@ void GenerationManager::DrawCreatures(mat4 ViewProjection)
 	}
 }
 
+void GenerationManager::DrawFinishedCreatures(mat4 ViewProjection, int CreatureIndex)
+{
+	/// Assert that sorted list is not empty and that you aren't sending an out of bounds index
+	assert(mSortedCreatures.size() > 0 && CreatureIndex <= mSortedCreatures.size());
+
+	mSortedCreatures[CreatureIndex].first->Draw(ViewProjection);
+}
+
 void GenerationManager::SetPositionOfCreatures(vec3 Position)
 {
 	for (auto creature : mCreatures)
@@ -105,6 +132,84 @@ void GenerationManager::Activate(float Force)
 	for (auto creature : mCreatures)
 	{
 		creature->mCreature->Activate(Force);
+	}
+}
+
+void GenerationManager::Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity)
+{
+	/// Clear the sorted list of victors
+	mSortedCreatures.erase(mSortedCreatures.begin(), mSortedCreatures.end());
+
+	mNumberOfGenerations = NumberOfGenerations;
+	mGenerationDurationSeconds = GenTime;
+
+	mGenerationSurvivors = GenerationSurvivors;
+	mMutationChance = MutationChance;
+	mMutationSeverity = MutationSeverity;
+
+	bRunningGenerations = true;
+
+	StartEvalutation();
+}
+
+/// Utility for checking if the creatures are sorted yet by their fitness, only used by cull generation and when a generation finishes so we can render the best ones
+static bool IsSorted(const std::vector<std::pair<Creature*, float>>& Arr)
+{
+	for (int i = 0; i < Arr.size() - 1; i++)
+	{
+		if (Arr[i + 1].second > Arr[i].second)
+			return false;
+	}
+	return true;
+}
+
+void GenerationManager::Update(float DeltaTime)
+{
+	if (bRunningGenerations)
+	{
+		mCurrentGenerationDuration += DeltaTime;
+		if (mCurrentGenerationDuration > mGenerationDurationSeconds)
+		{
+			mCurrentGenerationDuration = 0;
+			mCurrentGeneration += 1;
+
+			EndEvaluation();
+
+			CullGeneration(mGenerationSurvivors);
+
+			if (!(mCurrentGeneration >= mNumberOfGenerations))
+			{
+				EvolveCreatures(mMutationChance, mMutationSeverity);
+				StartEvalutation();
+			}
+
+			SetPositionOfCreatures(vec3(0, 20, 0));
+
+			if (mCurrentGeneration >= mNumberOfGenerations)
+			{
+				bRunningGenerations = false;
+				bFinishedAllGenerations = true;
+
+				for (auto creature : mCreatures)
+				{
+					mSortedCreatures.push_back({ creature->mCreature, creature->mFitness });
+				}
+
+				/// Sort the creatures based on their fitness
+				while (!IsSorted(mSortedCreatures))
+				{
+					for (int i = 0; i < mSortedCreatures.size(); i++)
+					{
+						int j = i;
+						while (j < mSortedCreatures.size() - 1 && mSortedCreatures[j].second < mSortedCreatures[j + 1].second)
+							j++;
+						std::pair<Creature*, float> Temp = mSortedCreatures[j];
+						mSortedCreatures[j] = mSortedCreatures[i];
+						mSortedCreatures[i] = Temp;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -130,18 +235,8 @@ void GenerationManager::EndEvaluation()
 
 		//creature->mFitness = creature->mAverageSpeed + creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
 		creature->mFitness = creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
+		std::cout << creature->mFitness;
 	}
-}
-
-/// Utility for checking if the creatures are sorted yet by their fitness, only used by cull generation
-static bool IsSorted(const std::vector<std::pair<Creature*, float>>& Arr)
-{
-	for (int i = 0; i < Arr.size() - 1; i++)
-	{
-		if (Arr[i + 1].second > Arr[i].second)
-			return false;
-	}
-	return true;
 }
 
 void GenerationManager::CullGeneration(int NumberToKeep)
@@ -152,10 +247,12 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 	{
 		SortedCreatures.push_back({ creature->mCreature, creature->mFitness });
 		creature->mCreature->RemoveFromScene(creature->mScene);
+		creature->mScene->removeActor(*creature->mPlaneCollision);
 		creature->mPlaneCollision->release();
 		creature->mScene->release();
 	}
 
+	/// Sort the creatures based on their fitness
 	while (!IsSorted(SortedCreatures))
 	{
 		for (int i = 0; i < SortedCreatures.size(); i++)
@@ -169,24 +266,32 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 		}
 	}
 
+	/// Clear the creatures that are not up to snuff
 	for (int i = NumberToKeep; i < SortedCreatures.size(); i++)
 	{
 		delete SortedCreatures[i].first;
 	}
 	SortedCreatures.erase(SortedCreatures.begin() + NumberToKeep, SortedCreatures.end());
 
+	/// Delete the all of the CreatureStats
+	for (int i = 0; i < mCreatures.size(); i++)
+	{
+		delete mCreatures[i];
+	}
 	mCreatures.erase(mCreatures.begin(), mCreatures.end());
 
+	physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
+	physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+
+	/// Refill the mCreatures array with creatures based on mutations from the fittest
 	for (int i = 0; i < SortedCreatures.size(); i++)
 	{
-		physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
-		physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
 
 		/// ----------------------------------------
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
 
-		physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
+		//physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
 
 		physx::PxTolerancesScale ToleranceScale;
 
@@ -195,8 +300,8 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 
 		physx::PxSceneDesc SceneDesc(ToleranceScale);
 		SceneDesc.gravity = { 0, -9.8, 0 };
-		Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
-		SceneDesc.cpuDispatcher = Dispatcher;
+		//Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+		SceneDesc.cpuDispatcher = mDispatcher;
 		SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
 		SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 		SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
@@ -220,9 +325,12 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 		SortedCreatures[i].first->AddToScene(Scene);
 
 		CreatureStats* a = new CreatureStats(SortedCreatures[i].first, Scene, PlaneCollision);
+		a->mFitness = SortedCreatures[i].second;
 
 		mCreatures.push_back(a);
 	}
+
+	MaterialPtr->release();
 }
 
 void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeverity)
@@ -242,7 +350,7 @@ void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeve
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
 
-		physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
+		//physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
 
 		physx::PxTolerancesScale ToleranceScale;
 
@@ -251,8 +359,8 @@ void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeve
 
 		physx::PxSceneDesc SceneDesc(ToleranceScale);
 		SceneDesc.gravity = { 0, -9.8, 0 };
-		Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
-		SceneDesc.cpuDispatcher = Dispatcher;
+		//Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+		SceneDesc.cpuDispatcher = mDispatcher;
 		SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
 		SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 		SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
@@ -281,4 +389,6 @@ void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeve
 
 		i = (i + 1) % NumberOfCreaturesToEvolve;
 	}
+
+	MaterialPtr->release();
 }

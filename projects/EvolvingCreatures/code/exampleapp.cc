@@ -280,8 +280,7 @@ ExampleApp::Run()
 	/// [END] CREATE ACTORS
 	/// ------------------------------------------
 
-	GenerationManager* GenMan = new GenerationManager(mPhysics);
-	GenMan->GenerateCreatures(artCube);
+	GenerationManager* GenMan = new GenerationManager(mPhysics, mDispatcher, artCube);
 
 	float mAccumulator = 0.0f;
 	float mStepSize = 1.0f / 60.0f;
@@ -291,56 +290,70 @@ ExampleApp::Run()
 	bool bActiveCreature = true;
 	bool bSimulateGravity = true;
 	int BodyPartsNum = 2;
-	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan]()
+	int CreatureIndexToDraw = 0;
+	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw]()
 	{
 		bool show = true;
 		// create a new window
 		ImGui::Begin("Evolving Creatures Options", &show, ImGuiWindowFlags_NoSavedSettings);
 
-		//ImGui::Checkbox("Attach Camera to Creature", &bAttachCam);
+		static bool bGenerationRunning = false;
 
-		//ImGui::Checkbox("Simulate Creature", &bActiveCreature);
-
-		//if (ImGui::Button("Toggle Gravity"))
-		//{
-		//	NewCreature->EnableGravity(!bSimulateGravity);
-		//	bSimulateGravity = !bSimulateGravity;
-		//}
-
-		//ImGui::InputInt("Number of limbs", &BodyPartsNum);
-		//BodyPartsNum = BodyPartsNum < 0 ? 0 : BodyPartsNum > 254 ? 254 : BodyPartsNum;
-
-		//if (ImGui::Button("Regenerate Creature"))
-		//{
-		//	bResetCreature = true;
-		//}
-
+		static int NumberOfCreatures = 50;
 		static int GenerationSurvivors = 15;
 		static float MutationChance = 0.3;
 		static float MutationSeverity = 0.3;
 
-		ImGui::DragInt("Per Gen", &GenerationSurvivors, 1, 5, GenMan->mGenerationSize);
-		ImGui::DragFloat("Mutation Chance", &MutationChance, 0.05, 0, 1, "%.2f");
-		ImGui::DragFloat("Mutation Severity", &MutationSeverity, 0.05, 0, 1, "%.2f");
+		static int NumberOfGenerations = 5;
+		static float EvaluationTime = 30;
 
-		if (!GenMan->bEvaluating && ImGui::Button("Start Evaluation"))
+
+		if (GenMan->bFinishedAllGenerations)
 		{
-			GenMan->StartEvalutation();
+			ImGui::Text("Evolution Finished");
+
+			ImGui::DragInt("Which Creature to Draw", &CreatureIndexToDraw, 1, 0, GenMan->mSortedCreatures.size() - 1);
+			ImGui::Text("Drawing creature %d/%d", CreatureIndexToDraw, GenMan->mSortedCreatures.size() - 1);
+			ImGui::Text("Creature Stats");
+			ImGui::Text("Creature Fitness: %f", GenMan->mSortedCreatures[CreatureIndexToDraw].second);
+
+
+			if (ImGui::Button("Finish"))
+			{
+				GenMan->bFinishedAllGenerations = false;
+			}
+		}
+		else if (!GenMan->bRunningGenerations)
+		{
+			ImGui::Text("Evolution Options");
+			ImGui::DragInt("How many creatures", &NumberOfCreatures, 1, 5, 500);
+			ImGui::DragInt("How many to keep per gen", &GenerationSurvivors, 1, 5, NumberOfCreatures);
+			if (GenerationSurvivors > NumberOfCreatures)
+				GenerationSurvivors = NumberOfCreatures;
+			ImGui::DragFloat("Mutation Chance", &MutationChance, 0.05, 0, 1, "%.2f");
+			ImGui::DragFloat("Mutation Severity", &MutationSeverity, 0.05, 0, 1, "%.2f");
+
+			ImGui::Text("Generation Management");
+			ImGui::DragInt("Number of Generations", &NumberOfGenerations, 1, 1, 50);
+			ImGui::DragFloat("Evaluation Duration", &EvaluationTime, 1, 0, 120);
+
+			if (ImGui::Button("Start"))
+			{
+				GenMan->Start(NumberOfGenerations, EvaluationTime, GenerationSurvivors, MutationChance, MutationSeverity);
+				GenMan->GenerateCreatures(NumberOfCreatures);
+			}
+		}
+		else
+		{
+			ImGui::Text("Statistics");
+			ImGui::Text("On Generation: %d/%d", GenMan->mCurrentGeneration, GenMan->mNumberOfGenerations);
+			ImGui::Text("Been running for: %.2f/%.2f", GenMan->mCurrentGenerationDuration, GenMan->mGenerationDurationSeconds);
+
+			float CurrentProgress = (((GenMan->mCurrentGeneration * GenMan->mGenerationDurationSeconds) + GenMan->mCurrentGenerationDuration) / (GenMan->mNumberOfGenerations * GenMan->mGenerationDurationSeconds));
+
+			ImGui::Text("Progress: %.2f%%", CurrentProgress * 100);
 		}
 
-		if (GenMan->bEvaluating)
-		{
-			float EvalTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - GenMan->mEvaluationStartTime).count() / 1000.0f;
-			ImGui::Text("Current Time %.3f", EvalTime);
-		}
-
-		if (GenMan->bEvaluating && ImGui::Button("Next Generation"))
-		{
-			GenMan->EndEvaluation();
-			GenMan->CullGeneration(GenerationSurvivors);
-			GenMan->EvolveCreatures(MutationChance, MutationSeverity);
-			GenMan->SetPositionOfCreatures(vec3(0, 20, 0));
-		}
 
 		// close window
 		ImGui::End();
@@ -355,34 +368,36 @@ ExampleApp::Run()
 		float timesincestart = std::chrono::duration_cast<std::chrono::milliseconds>(end - appStart).count() / 1000.0f;
 		start = std::chrono::high_resolution_clock::now();
 
-		if (bResetCreature)
-		{
+		//if (bResetCreature)
+		//{
 
-			std::cout << "\n----------------------------------------\nCreating new Creature!\n";
-			CreatureStart = std::chrono::high_resolution_clock::now();
-			NewCreature->RemoveFromScene(mScene);
-			delete NewCreature;
+		//	std::cout << "\n----------------------------------------\nCreating new Creature!\n";
+		//	CreatureStart = std::chrono::high_resolution_clock::now();
+		//	NewCreature->RemoveFromScene(mScene);
+		//	delete NewCreature;
 
-			NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
-			NewCreature->SetPosition(vec3(0, 10, 0));
+		//	NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
+		//	NewCreature->SetPosition(vec3(0, 10, 0));
 
-			for (int i = 0; i < BodyPartsNum; i++)
-				NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
+		//	for (int i = 0; i < BodyPartsNum; i++)
+		//		NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
 
-			NewCreature->AddToScene(mScene);
+		//	NewCreature->AddToScene(mScene);
 
-			NewCreature->EnableGravity(bSimulateGravity);
+		//	NewCreature->EnableGravity(bSimulateGravity);
 
 
-			MutatedCreature->RemoveFromScene(mScene);
-			delete MutatedCreature;
-			MutatedCreature = NewCreature->GetMutatedCreature(mPhysics, 0.5, 0.3);
-			MutatedCreature->SetPosition(vec3(10, 10, 0));
-			MutatedCreature->AddToScene(mScene);
+		//	MutatedCreature->RemoveFromScene(mScene);
+		//	delete MutatedCreature;
+		//	MutatedCreature = NewCreature->GetMutatedCreature(mPhysics, 0.5, 0.3);
+		//	MutatedCreature->SetPosition(vec3(10, 10, 0));
+		//	MutatedCreature->AddToScene(mScene);
 
-			bResetCreature = false;
-			std::cout << "\n----------------------------------------";
-		}
+		//	bResetCreature = false;
+		//	std::cout << "\n----------------------------------------";
+		//}
+
+		GenMan->Update(deltaseconds);
 
 		mAccumulator += deltaseconds;
 		if (mAccumulator > mStepSize)
@@ -482,7 +497,10 @@ ExampleApp::Run()
 
 		//NewCreature->Draw(viewProjection);
 		//MutatedCreature->Draw(viewProjection);
-		GenMan->DrawCreatures(viewProjection);
+		if (GenMan->bRunningGenerations)
+			GenMan->DrawCreatures(viewProjection);
+		else if (GenMan->bFinishedAllGenerations)
+			GenMan->DrawFinishedCreatures(viewProjection, CreatureIndexToDraw);
 
 		Quad.draw(viewProjection);
 
