@@ -235,7 +235,6 @@ void GenerationManager::EndEvaluation()
 
 		//creature->mFitness = creature->mAverageSpeed + creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
 		creature->mFitness = creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
-		std::cout << creature->mFitness;
 	}
 }
 
