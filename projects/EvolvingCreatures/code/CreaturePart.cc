@@ -77,7 +77,7 @@ void CreaturePart::ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, phy
 
 	/// Configure the joint type and motion, limited motion
 	mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
-	mJoint->setMotion(mJointAxis, physx::PxArticulationMotion::eFREE);
+	mJoint->setMotion(mJointAxis, physx::PxArticulationMotion::eLIMITED);
 	physx::PxArticulationLimit limits;
 	limits.low = -physx::PxPiDivFour;
 	limits.high = physx::PxPiDivFour;
