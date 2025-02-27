@@ -68,11 +68,9 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 }
 
 /// TODO: Add options to this for different styled joints
-/// PosDrive should probably be a parameter
 void CreaturePart::ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive)
 {
 	/// This sets the joint axis to either eTWIST, eSWING1, or eSWING2
-	//mJointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
 	mJointAxis = JointAxis;
 
 	/// Configure the joint type and motion, limited motion
@@ -83,17 +81,8 @@ void CreaturePart::ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, phy
 	limits.high = physx::PxPiDivFour;
 	mJoint->setLimitParams(mJointAxis, limits);
 
-	/// Add joint drive
-	//physx::PxArticulationDrive posDrive;
-	//posDrive.stiffness = 100;
-	//posDrive.damping = 10;
-	//posDrive.maxForce = 1000;
-	//posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
-
 	/// Apply and Set targets (note the consistent axis)
 	mJoint->setDriveParams(mJointAxis, PosDrive);
-	//mJoint->setDriveVelocity(physx::PxArticulationAxis::eSWING2, 0.0f);
-	//mJoint->setDriveTarget(physx::PxArticulationAxis::eSWING2, 0);
 }
 
 void CreaturePart::Activate(float TimePassed)
