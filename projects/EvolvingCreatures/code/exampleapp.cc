@@ -302,10 +302,10 @@ ExampleApp::Run()
 		static int NumberOfCreatures = 50;
 		static int GenerationSurvivors = 15;
 		static float MutationChance = 0.3;
-		static float MutationSeverity = 0.3;
+		static float MutationSeverity = 0.15;
 
 		static int NumberOfGenerations = 5;
-		static float EvaluationTime = 30;
+		static float EvaluationTime = 20;
 
 
 		if (GenMan->bFinishedAllGenerations)
@@ -346,7 +346,13 @@ ExampleApp::Run()
 		else
 		{
 			ImGui::Text("Statistics");
-			ImGui::Text("On Generation: %d/%d", GenMan->mCurrentGeneration, GenMan->mNumberOfGenerations);
+
+			ImGui::Text("Number of creatures: %d", NumberOfCreatures);
+			ImGui::Text("Survivors per gen: %d", GenerationSurvivors);
+			ImGui::Text("Mutation Chance: %.1f%%", MutationChance * 100);
+			ImGui::Text("Mutation Severity: %.1f%%", MutationSeverity * 100);
+
+			ImGui::Text("\nOn Generation: %d/%d", GenMan->mCurrentGeneration, GenMan->mNumberOfGenerations);
 			ImGui::Text("Been running for: %.2f/%.2f", GenMan->mCurrentGenerationDuration, GenMan->mGenerationDurationSeconds);
 
 			float CurrentProgress = (((GenMan->mCurrentGeneration * GenMan->mGenerationDurationSeconds) + GenMan->mCurrentGenerationDuration) / (GenMan->mNumberOfGenerations * GenMan->mGenerationDurationSeconds));
