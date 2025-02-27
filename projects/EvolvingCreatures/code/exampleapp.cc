@@ -306,7 +306,7 @@ ExampleApp::Run()
 
 		/// Debug Feature
 		char* StateNames[] = { {"Nothing"} , {"Running"}, {"Finished"}, {"Waiting"}};
-		ImGui::Text(StateNames[GenMan->mCurrentState]);
+		ImGui::Text("Current state: %s", StateNames[GenMan->mCurrentState]);
 
 		if (GenMan->mCurrentState == GenerationManagerState::Finished)
 		{
