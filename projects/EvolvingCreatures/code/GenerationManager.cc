@@ -84,7 +84,7 @@ void GenerationManager::Simulate(float StepSize)
 		creature->mScene->simulate(StepSize);
 		creature->mScene->fetchResults(true);
 
-		if (bEvaluating)
+		if (mCurrentState == GenerationManagerState::Running)
 		{
 			physx::PxVec3 Vel = creature->mCreature->mRootPart->mLink->getLinearVelocity();
 			physx::PxVec3 HorizontalVel = { Vel.x, 0, Vel.z };
@@ -138,6 +138,8 @@ void GenerationManager::Activate(float Force)
 
 void GenerationManager::Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity)
 {
+	mCurrentState = GenerationManagerState::Running;
+
 	/// Clear the sorted list of victors
 	mSortedCreatures.erase(mSortedCreatures.begin(), mSortedCreatures.end());
 
@@ -151,7 +153,7 @@ void GenerationManager::Start(int NumberOfGenerations, float GenTime, int Genera
 	mCurrentGeneration = 0;
 	mCurrentGenerationDuration = 0;
 
-	bRunningGenerations = true;
+	//bRunningGenerations = true;
 
 	StartEvalutation();
 }
@@ -169,7 +171,7 @@ static bool IsSorted(const std::vector<std::pair<Creature*, float>>& Arr)
 
 void GenerationManager::Update(float DeltaTime)
 {
-	if (bRunningGenerations)
+	if (mCurrentState == GenerationManagerState::Running)
 	{
 		mCurrentGenerationDuration += DeltaTime;
 		if (mCurrentGenerationDuration > mGenerationDurationSeconds)
@@ -191,8 +193,9 @@ void GenerationManager::Update(float DeltaTime)
 
 			if (mCurrentGeneration >= mNumberOfGenerations)
 			{
-				bRunningGenerations = false;
-				bFinishedAllGenerations = true;
+				//bRunningGenerations = false;
+				//bFinishedAllGenerations = true;
+				mCurrentState = GenerationManagerState::Finished;
 
 				for (auto creature : mCreatures)
 				{
@@ -224,14 +227,14 @@ void GenerationManager::StartEvalutation()
 		creature->mSumHorizontalSpeed = 0;
 	}
 
-	bEvaluating = true;
+	//bEvaluating = true;
 	mEvaluationStartTime = std::chrono::high_resolution_clock::now();
 }
 
 void GenerationManager::EndEvaluation()
 {
 	mEvaluationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - mEvaluationStartTime).count() / 1000.f;
-	bEvaluating = false;
+	//bEvaluating = false;
 
 	for (auto creature : mCreatures)
 	{

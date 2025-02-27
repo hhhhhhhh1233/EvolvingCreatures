@@ -307,8 +307,11 @@ ExampleApp::Run()
 		static int NumberOfGenerations = 5;
 		static float EvaluationTime = 20;
 
+		/// Debug Feature
+		char* StateNames[] = { {"Nothing"} , {"Running"}, {"Finished"}, {"Waiting"}};
+		ImGui::Text(StateNames[GenMan->mCurrentState]);
 
-		if (GenMan->bFinishedAllGenerations)
+		if (GenMan->mCurrentState == GenerationManagerState::Finished)
 		{
 			ImGui::Text("Evolution Finished");
 
@@ -322,10 +325,10 @@ ExampleApp::Run()
 
 			if (ImGui::Button("Finish"))
 			{
-				GenMan->bFinishedAllGenerations = false;
+				GenMan->mCurrentState = GenerationManagerState::Nothing;
 			}
 		}
-		else if (!GenMan->bRunningGenerations)
+		else if (GenMan->mCurrentState == GenerationManagerState::Nothing)
 		{
 			ImGui::Text("Evolution Options");
 			ImGui::DragInt("How many creatures", &NumberOfCreatures, 1, 5, 500);
@@ -414,9 +417,9 @@ ExampleApp::Run()
 			{
 				NewCreature->Activate(timesincestart);
 				MutatedCreature->Activate(timesincestart);
-				if (GenMan->bRunningGenerations)
+				if (GenMan->mCurrentState == GenerationManagerState::Running)
 					GenMan->Activate(GenMan->mCurrentGenerationDuration);
-				else
+				else if (GenMan->mCurrentState != GenerationManagerState::Waiting)
 					GenMan->Activate(timesincestart);
 			}
 
@@ -438,7 +441,7 @@ ExampleApp::Run()
 		if (glfwGetKey(window->window, GLFW_KEY_G) == GLFW_PRESS)
 			NewCreature->mRootPart->mLink->addTorque({ 50, 0, 0 });
 		
-		if (GenMan->bFinishedAllGenerations && bAttachCam)
+		if (GenMan->mCurrentState == GenerationManagerState::Finished && bAttachCam)
 		{
 			auto PV = GenMan->mSortedCreatures[CreatureIndexToDraw].first->mRootPart->mLink->getGlobalPose().p;
 			vec3 v(PV.x, PV.y, PV.z);
@@ -508,9 +511,9 @@ ExampleApp::Run()
 
 		//NewCreature->Draw(viewProjection);
 		//MutatedCreature->Draw(viewProjection);
-		if (GenMan->bRunningGenerations)
+		if (GenMan->mCurrentState == GenerationManagerState::Running || GenMan->mCurrentState == GenerationManagerState::Waiting)
 			GenMan->DrawCreatures(viewProjection);
-		else if (GenMan->bFinishedAllGenerations)
+		else if (GenMan->mCurrentState == GenerationManagerState::Finished)
 			GenMan->DrawFinishedCreatures(viewProjection, CreatureIndexToDraw);
 
 		Quad.draw(viewProjection);

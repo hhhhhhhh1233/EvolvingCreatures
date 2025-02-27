@@ -25,6 +25,13 @@ struct CreatureStats
 	}
 };
 
+enum GenerationManagerState {
+	Nothing,
+	Running,
+	Finished,
+	Waiting,
+};
+
 class GenerationManager
 {
 public:
@@ -35,8 +42,10 @@ public:
 
 	GraphicsNode mCubeNode;
 
+	GenerationManagerState mCurrentState = GenerationManagerState::Nothing;
+
 	/// Variables for keeping track of the generations
-	bool bRunningGenerations = false;
+	//bool bRunningGenerations = false;
 
 	unsigned int mCurrentGeneration = 0;
 	unsigned int mNumberOfGenerations = 0;
@@ -48,10 +57,10 @@ public:
 	float mMutationChance; 
 	float mMutationSeverity;
 
-	bool bFinishedAllGenerations = false;
+	//bool bFinishedAllGenerations = false;
 
 	/// Variables for keeping track of how long an evaluation period was, in seconds
-	bool bEvaluating = false;
+	//bool bEvaluating = false;
 	std::chrono::steady_clock::time_point mEvaluationStartTime;
 	float mEvaluationDuration;
 
