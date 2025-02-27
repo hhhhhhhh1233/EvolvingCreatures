@@ -147,6 +147,9 @@ void GenerationManager::Start(int NumberOfGenerations, float GenTime, int Genera
 	mMutationChance = MutationChance;
 	mMutationSeverity = MutationSeverity;
 
+	mCurrentGeneration = 0;
+	mCurrentGenerationDuration = 0;
+
 	bRunningGenerations = true;
 
 	StartEvalutation();
