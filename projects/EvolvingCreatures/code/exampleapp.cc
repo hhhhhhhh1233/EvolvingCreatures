@@ -317,6 +317,8 @@ ExampleApp::Run()
 			ImGui::Text("Creature Stats");
 			ImGui::Text("Creature Fitness: %f", GenMan->mSortedCreatures[CreatureIndexToDraw].second);
 
+			ImGui::Checkbox("Follow creature", &bAttachCam);
+
 
 			if (ImGui::Button("Finish"))
 			{
@@ -412,7 +414,10 @@ ExampleApp::Run()
 			{
 				NewCreature->Activate(timesincestart);
 				MutatedCreature->Activate(timesincestart);
-				GenMan->Activate(timesincestart);
+				if (GenMan->bRunningGenerations)
+					GenMan->Activate(GenMan->mCurrentGenerationDuration);
+				else
+					GenMan->Activate(timesincestart);
 			}
 
 			mScene->simulate(mStepSize);
@@ -433,16 +438,16 @@ ExampleApp::Run()
 		if (glfwGetKey(window->window, GLFW_KEY_G) == GLFW_PRESS)
 			NewCreature->mRootPart->mLink->addTorque({ 50, 0, 0 });
 		
-		if (!bAttachCam)
-			cam.UpdateInput(window->window, deltaseconds);
-		else
+		if (GenMan->bFinishedAllGenerations && bAttachCam)
 		{
-			auto PV = NewCreature->mRootPart->mLink->getGlobalPose().p;
+			auto PV = GenMan->mSortedCreatures[CreatureIndexToDraw].first->mRootPart->mLink->getGlobalPose().p;
 			vec3 v(PV.x, PV.y, PV.z);
 			cam.mTarget = v;
 
-			cam.mPosition = cam.mTarget + vec3(5, 5, 0);
+			cam.mPosition = cam.mTarget + vec3(10, 10, 0);
 		}
+		else
+			cam.UpdateInput(window->window, deltaseconds);
 
 		auto frameStart = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed_seconds{ frameStart - appStart };
