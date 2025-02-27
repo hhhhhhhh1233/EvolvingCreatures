@@ -121,9 +121,10 @@ void GenerationManager::SetPositionOfCreatures(vec3 Position)
 {
 	for (auto creature : mCreatures)
 	{
-		creature->mCreature->RemoveFromScene(creature->mScene);
+		//creature->mCreature->RemoveFromScene(creature->mScene);
 		creature->mCreature->SetPosition(Position);
-		creature->mCreature->AddToScene(creature->mScene);
+		//creature->mCreature->AddToScene(creature->mScene);
+		creature->mCreature->ClearForceAndTorque();
 	}
 }
 

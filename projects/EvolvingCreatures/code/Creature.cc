@@ -135,6 +135,22 @@ void Creature::SetPosition(vec3 Position)
 	mArticulation->setRootGlobalPose(physx::PxTransform(physx::PxVec3(Position.x, Position.y, Position.z)));
 }
 
+void Creature::ClearForceAndTorque()
+{
+	/// If the articulation is not part of a scene it doesn't work to call clear force or torque, I guess that doesn't mean much outside of a scene
+	assert(mArticulation->getScene() != NULL);
+
+	mArticulation->setRootAngularVelocity({ 0, 0, 0 });
+	mArticulation->setRootLinearVelocity({ 0, 0, 0 });
+
+	std::vector<CreaturePart*> Parts = GetAllParts();
+	for (auto& Part : Parts)
+	{
+		Part->mLink->clearForce();
+		Part->mLink->clearTorque();
+	}
+}
+
 void Creature::AddToScene(physx::PxScene* Scene)
 {
 	Scene->addArticulation(*mArticulation);
