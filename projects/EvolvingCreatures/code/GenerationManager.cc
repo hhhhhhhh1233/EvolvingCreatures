@@ -234,7 +234,10 @@ void GenerationManager::EndEvaluation()
 		creature->mAverageSpeed = creature->mSumHorizontalSpeed / mEvaluationDuration;
 
 		//creature->mFitness = creature->mAverageSpeed + creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
-		creature->mFitness = creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
+		/// This is to only consider horizontal movement interesting in fitness calculation
+		physx::PxVec3 Pos = creature->mCreature->mRootPart->mLink->getGlobalPose().p;
+		Pos = { Pos.x, 0, Pos.z };
+		creature->mFitness = Pos.magnitude();
 	}
 }
 
