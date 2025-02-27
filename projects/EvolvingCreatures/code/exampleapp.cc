@@ -24,8 +24,7 @@
 
 #include "imgui.h"
 
-//#define FILE_ROOT "C:\\Users\\tagtje-1\\Documents\\EvolvingCreatures\\ProjectFiles\\"
-#define FILE_ROOT "C:\\Users\\tagtje-1\\Documents\\EvolvingCreatures\\Assets\\"
+#define FILE_ROOT "Assets\\"
 
 using namespace Display;
 namespace Example

@@ -14,3 +14,6 @@ TARGET_LINK_LIBRARIES(EvolvingCreatures core render unofficial::omniverse-physx-
 ADD_DEPENDENCIES(EvolvingCreatures core render)
 
 # target_link_libraries(EvolvingCreatures PRIVATE unofficial::omniverse-physx-sdk::sdk)
+IF(MSVC)
+    set_property(TARGET EvolvingCreatures PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+ENDIF()
