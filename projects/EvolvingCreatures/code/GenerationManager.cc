@@ -31,7 +31,7 @@ void GenerationManager::GenerateCreatures(int GenerationSize)
 		for (int i = 0; i < NumberOfBodyParts; i++)
 			reature->AddRandomPart(mPhysics, MaterialPtr, ShapeFlags, mCubeNode);
 
-		reature->SetPosition(vec3(0, 10, 0));
+		reature->SetPosition(vec3(0, 20, 0));
 
 		/// ----------------------------------------
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
@@ -350,7 +350,7 @@ void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeve
 	while (mCreatures.size() < mGenerationSize)
 	{
 		Creature* Creat = mCreatures[i]->mCreature->GetMutatedCreature(mPhysics, MutationChance, MutationSeverity);
-		Creat->SetPosition(vec3(0, 10, 0));
+		Creat->SetPosition(vec3(0, 20, 0));
 
 		/// ----------------------------------------
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
