@@ -187,45 +187,45 @@ ExampleApp::Run()
 	physx::PxDefaultAllocator mDefaultAllocatorCallback;
 	physx::PxDefaultErrorCallback mDefaultErrorCallback;
 
-	physx::PxFoundation* mFoundation = NULL;
-	mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, mDefaultAllocatorCallback, mDefaultErrorCallback);
-	if (!mFoundation)
+	physx::PxFoundation* Foundation = NULL;
+	Foundation = PxCreateFoundation(PX_PHYSICS_VERSION, mDefaultAllocatorCallback, mDefaultErrorCallback);
+	if (!Foundation)
 	{
 		std::cout << "Completely broken!\n";
 		return;
 	}
 
-	physx::PxPhysics* mPhysics = NULL;
+	physx::PxPhysics* Physics = NULL;
 	physx::PxPvd* mPvd = NULL;
 
 	bool bRecordMemoryAllocation = true;
-	mPvd = physx::PxCreatePvd(*mFoundation);
+	mPvd = physx::PxCreatePvd(*Foundation);
 	physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
 	mPvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
 
-	mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, physx::PxTolerancesScale(), bRecordMemoryAllocation, mPvd);
-	if (!mPhysics)
+	Physics = PxCreatePhysics(PX_PHYSICS_VERSION, *Foundation, physx::PxTolerancesScale(), bRecordMemoryAllocation, mPvd);
+	if (!Physics)
 	{
 		std::cout << "Completely broken!\n";
 		return;
 	}
 
-	physx::PxDefaultCpuDispatcher* mDispatcher = NULL;
+	physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
 
-	physx::PxTolerancesScale mToleranceScale;
+	physx::PxTolerancesScale ToleranceScale;
 
-	mToleranceScale.length = 1;
-	mToleranceScale.speed = 981;
+	ToleranceScale.length = 1;
+	ToleranceScale.speed = 981;
 
-	physx::PxSceneDesc mSceneDesc(mToleranceScale);
-	mSceneDesc.gravity = { 0, -9.8, 0 };
-	mDispatcher = physx::PxDefaultCpuDispatcherCreate(2);
-	mSceneDesc.cpuDispatcher = mDispatcher;
-	mSceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
-	mSceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-	mSceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	physx::PxSceneDesc SceneDesc(ToleranceScale);
+	SceneDesc.gravity = { 0, -9.8, 0 };
+	Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
+	SceneDesc.cpuDispatcher = Dispatcher;
+	SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+	SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 
-	physx::PxScene* mScene = mPhysics->createScene(mSceneDesc);
+	physx::PxScene* mScene = Physics->createScene(SceneDesc);
 	mScene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
 
 	/// ------------------------------------------
@@ -237,11 +237,11 @@ ExampleApp::Run()
 	/// ------------------------------------------
 
 	physx::PxShapeFlags shapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
-	physx::PxMaterial* materialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+	physx::PxMaterial* materialPtr = Physics->createMaterial(0.5f, 0.5f, 0.1f);
 
-	physx::PxRigidStatic* PlaneCollision = mPhysics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
+	physx::PxRigidStatic* PlaneCollision = Physics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
 	{
-		physx::PxShape* shape = mPhysics->createShape(physx::PxPlaneGeometry(), &materialPtr, 1, true, shapeFlags);
+		physx::PxShape* shape = Physics->createShape(physx::PxPlaneGeometry(), &materialPtr, 1, true, shapeFlags);
 		PlaneCollision->attachShape(*shape);
 		shape->release();
 	}
@@ -253,7 +253,7 @@ ExampleApp::Run()
 	vec3 RootScale(1.5f, 2.5f, 1.5f);
 	vec3 ChildScale(1.5, 3.5, 1.5);
 
-	Creature* NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, RootScale);
+	Creature* NewCreature = new Creature(Physics, materialPtr, shapeFlags, artCube, RootScale);
 	NewCreature->SetPosition(vec3(0, 10, 0));
 
 	/// The positions are different, the way you get that is by taking parent scale plus child scale in the axis want to move it along, 4 = 1.5 + 2.5, and 5 = 2.5 + 2.5
@@ -272,7 +272,7 @@ ExampleApp::Run()
 
 	NewCreature->AddToScene(mScene);
 
-	Creature* MutatedCreature = NewCreature->GetMutatedCreature(mPhysics, 1.5, 0.5);
+	Creature* MutatedCreature = NewCreature->GetMutatedCreature(Physics, 1.5, 0.5);
 	MutatedCreature->SetPosition(vec3(5, 10, 0));
 	MutatedCreature->AddToScene(mScene);
 
@@ -280,7 +280,7 @@ ExampleApp::Run()
 	/// [END] CREATE ACTORS
 	/// ------------------------------------------
 
-	GenerationManager* GenMan = new GenerationManager(mPhysics, mDispatcher, artCube);
+	GenerationManager* GenMan = new GenerationManager(Physics, Dispatcher, artCube);
 
 	float mAccumulator = 0.0f;
 	float mStepSize = 1.0f / 60.0f;
@@ -531,8 +531,8 @@ ExampleApp::Run()
 	/// [BEGIN] SHUTDOWN PHYSICS
 	/// ------------------------------------------
 
-	mPhysics->release();
-	mFoundation->release();
+	Physics->release();
+	Foundation->release();
 
 	/// ------------------------------------------
 	/// [END] SHUTDOWN PHYSICS
