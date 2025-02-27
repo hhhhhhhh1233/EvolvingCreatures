@@ -24,8 +24,6 @@
 
 #include "imgui.h"
 
-#define FILE_ROOT "Assets\\"
-
 using namespace Display;
 namespace Example
 {
@@ -120,35 +118,35 @@ ExampleApp::Run()
 	/// ---------------------------------------- 
 
 	TextureResource furTexture;
-	furTexture.LoadFromFile(FILE_ROOT "images\\fur.jpg");
+	furTexture.LoadFromFile("Assets\\images\\fur.jpg");
 
 	TextureResource gridTexture;
-	gridTexture.LoadFromFile(FILE_ROOT "images\\Grid.jpg");
+	gridTexture.LoadFromFile("Assets\\images\\Grid.jpg");
 
 	TextureResource gridArtTexture;
-	gridArtTexture.LoadFromFile(FILE_ROOT "images\\Grid2.png");
+	gridArtTexture.LoadFromFile("Assets\\images\\Grid2.png");
 
 	TextureResource defaultTexture;
-	defaultTexture.LoadFromFile(FILE_ROOT "images\\default.png");
+	defaultTexture.LoadFromFile("Assets\\images\\default.png");
 
 	std::shared_ptr<ShaderResource> shader = std::make_shared<ShaderResource>();
-	shader->LoadShaders(FILE_ROOT "Shaders\\materialShader.vert", FILE_ROOT "Shaders\\materialShader.frag");
+	shader->LoadShaders("Assets\\Shaders\\materialShader.vert", "Assets\\Shaders\\materialShader.frag");
 
 	std::shared_ptr<ShaderResource> lightingShader = std::make_shared<ShaderResource>();
-	lightingShader->LoadShaders(FILE_ROOT "Shaders\\lightingShader.vert", FILE_ROOT "Shaders\\lightingShader.frag");
+	lightingShader->LoadShaders("Assets\\Shaders\\lightingShader.vert", "Assets\\Shaders\\lightingShader.frag");
 
 	std::shared_ptr<ShaderResource> simpleDepthShader = std::make_shared<ShaderResource>();
-	simpleDepthShader->LoadShaders(FILE_ROOT "Shaders\\simpleDepthShader.vert", FILE_ROOT "Shaders\\simpleDepthShader.frag");
+	simpleDepthShader->LoadShaders("Assets\\Shaders\\simpleDepthShader.vert", "Assets\\Shaders\\simpleDepthShader.frag");
 
 	MeshResource sphereMesh;
-	sphereMesh.LoadOBJ(FILE_ROOT "objs\\sphere.obj");
+	sphereMesh.LoadOBJ("Assets\\objs\\sphere.obj");
 
 	GraphicsNode sphere = GraphicsNode(std::make_shared<MeshResource>(std::move(sphereMesh)), std::make_shared<TextureResource>(gridTexture), shader, mat4(), 32);
 
-	GraphicsNode cube = LoadGLTF(FILE_ROOT "glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridTexture));
-	GraphicsNode armCube = LoadGLTF(FILE_ROOT "glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridTexture));
+	GraphicsNode cube = LoadGLTF("Assets\\glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridTexture));
+	GraphicsNode armCube = LoadGLTF("Assets\\glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridTexture));
 
-	GraphicsNode artCube = LoadGLTF(FILE_ROOT "glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridArtTexture));
+	GraphicsNode artCube = LoadGLTF("Assets\\glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridArtTexture));
 	GraphicsNode Quad(std::make_shared<MeshResource>(CreateQuad(300, 300, 50)), std::make_shared<TextureResource>(defaultTexture), lightingShader, rotationx(3.14/2), 1);
 	
 	mat4 projection = perspective(3.14f / 2, window->GetAspectRatio(), 0.1f, 1000);
