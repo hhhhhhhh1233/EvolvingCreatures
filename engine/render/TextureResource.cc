@@ -48,6 +48,8 @@ void TextureResource::LoadFromFile(const char* filename)
 	}
 	else
 	{
+		/// Pretty bad if you can't load an image so I'm adding an assert to save myself
+		assert(false);
 		std::cout << "Failed to load image" << std::endl;
 	}
 }
