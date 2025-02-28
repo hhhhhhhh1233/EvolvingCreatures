@@ -11,6 +11,8 @@ Creature::Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial
 	mRootPart->mLink = mArticulation->createLink(NULL, physx::PxTransform(physx::PxIdentity));
 
 	mRootPart->AddBoxShape(Physics, Scale, Node);
+
+	mShapes.emplace(mRootPart, BoundingBox(vec3(), Scale));
 }
 
 Creature::~Creature()
@@ -62,11 +64,39 @@ std::vector<CreaturePart*> Creature::GetAllPartsFrom(CreaturePart* Part)
 	return Parts;
 }
 
-void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node)
+void Creature::DrawBoundingBoxes(mat4 ViewProjection, vec3 Position, GraphicsNode Node)
+{
+	for (auto& [Part, Shape] : mShapes)
+	{
+		Node.transform = translate(Position + Shape.GetPosition()) * scale(Shape.GetScale());
+		Node.draw(ViewProjection);
+	}
+}
+
+bool Creature::IsColliding(BoundingBox Box, CreaturePart* ToIgnore)
+{
+	for (auto& [Part, Shape] : mShapes)
+	{
+		if (Part == ToIgnore)
+			continue;
+
+		if (Shape.IsColliding(Box))
+			return true;
+	}
+	return false;
+}
+
+std::pair<BoundingBox, CreaturePart*> Creature::GetRandomShape()
 {
 	CreaturePart* ParentPart = GetRandomPart();
 
-	vec3 RandomPointOnParent = ParentPart->mScale;
+	vec3 RandomPointOnParent;
+	vec3 RandomScale;
+	vec3 RandomRelativePosition;
+
+	int TEST_TRIES = 0;
+
+	RandomPointOnParent = ParentPart->mScale;
 
 	/// Pick an axis to place the new shape on
 	int RandAxis = rand() % 3;
@@ -95,12 +125,12 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	}
 
 	float MAX_SCALE = 3;
-	vec3 RandomScale(RandomFloat(MAX_SCALE), RandomFloat(MAX_SCALE), RandomFloat(MAX_SCALE));
+	RandomScale = vec3(RandomFloat(MAX_SCALE), RandomFloat(MAX_SCALE), RandomFloat(MAX_SCALE));
 
 	/// Set the position to be the random point we calculated, but also add a random chance to shift it around based on the shape of the child
-	vec3 RandomRelativePosition = vec3(	RandomPointOnParent.x + RandomFloatInRange(-RandomScale.x, RandomScale.x), 
-										RandomPointOnParent.y + RandomFloatInRange(-RandomScale.y, RandomScale.y), 
-										RandomPointOnParent.z + RandomFloatInRange(-RandomScale.z, RandomScale.z));
+	RandomRelativePosition = vec3(	RandomPointOnParent.x + RandomFloatInRange(-RandomScale.x, RandomScale.x), 
+									RandomPointOnParent.y + RandomFloatInRange(-RandomScale.y, RandomScale.y), 
+									RandomPointOnParent.z + RandomFloatInRange(-RandomScale.z, RandomScale.z));
 	
 
 	/// Set the axis that we determined as the normal to be maxed out
@@ -117,6 +147,78 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 		break;
 	}
 
+	return { BoundingBox(mShapes[ParentPart].GetPosition() + RandomRelativePosition, RandomScale), ParentPart };
+}
+
+void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node)
+{
+	CreaturePart* ParentPart;
+
+	vec3 RandomPointOnParent;
+	vec3 RandomScale;
+	vec3 RandomRelativePosition;
+
+	int TEST_TRIES = 0;
+
+	do
+	{
+		ParentPart = GetRandomPart();
+		RandomPointOnParent = ParentPart->mScale;
+
+		/// Pick an axis to place the new shape on
+		int RandAxis = rand() % 3;
+		switch (RandAxis)
+		{
+		case(0):
+			/// Times these values by [-1 , 1] to get a random point on the parent shape
+			RandomPointOnParent.x *= RandomFloatInRange(-1, 1); 
+			RandomPointOnParent.y *= RandomFloatInRange(-1, 1);
+
+			/// Times this value by either -1 or 1 to get the maximum or minimum point
+			RandomPointOnParent.z *= (RandomInt(2) * 2) - 1;
+			break;
+		case(1):
+			RandomPointOnParent.z *= RandomFloatInRange(-1, 1); 
+			RandomPointOnParent.x *= RandomFloatInRange(-1, 1);
+
+			RandomPointOnParent.y *= (RandomInt(2) * 2) - 1;
+			break;
+		case(2):
+			RandomPointOnParent.y *= RandomFloatInRange(-1, 1); 
+			RandomPointOnParent.z *= RandomFloatInRange(-1, 1);
+
+			RandomPointOnParent.x *= (RandomInt(2) * 2) - 1;
+			break;
+		}
+
+		float MAX_SCALE = 3;
+		RandomScale = vec3(RandomFloat(MAX_SCALE), RandomFloat(MAX_SCALE), RandomFloat(MAX_SCALE));
+
+		/// Set the position to be the random point we calculated, but also add a random chance to shift it around based on the shape of the child
+		RandomRelativePosition = vec3(	RandomPointOnParent.x + RandomFloatInRange(-RandomScale.x, RandomScale.x), 
+										RandomPointOnParent.y + RandomFloatInRange(-RandomScale.y, RandomScale.y), 
+										RandomPointOnParent.z + RandomFloatInRange(-RandomScale.z, RandomScale.z));
+		
+
+		/// Set the axis that we determined as the normal to be maxed out
+		switch (RandAxis)
+		{
+		case(0):
+			RandomRelativePosition.z = (ParentPart->mScale.z + RandomScale.z) * RandomPointOnParent.z/abs(RandomPointOnParent.z);
+			break;
+		case(1):
+			RandomRelativePosition.y = (ParentPart->mScale.y + RandomScale.y) * RandomPointOnParent.y/abs(RandomPointOnParent.y);
+			break;
+		case(2):
+			RandomRelativePosition.x = (ParentPart->mScale.x + RandomScale.x) * RandomPointOnParent.x/abs(RandomPointOnParent.x);
+			break;
+		}
+
+		TEST_TRIES++;
+	} while (IsColliding(BoundingBox(mShapes[ParentPart].GetPosition() + RandomRelativePosition, RandomScale), ParentPart));
+	if (TEST_TRIES > 1)
+		std::cout << "It took " << TEST_TRIES << " tries to generate part!\n";
+
 	float MaxJointVel = RandomFloatInRange(-20, 20);
 	float JointOscillationSpeed = RandomFloat(10);
 	physx::PxArticulationAxis::Enum JointAxis = static_cast<physx::PxArticulationAxis::Enum>(RandomInt(3));
@@ -124,10 +226,11 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	physx::PxArticulationDrive posDrive;
 	posDrive.stiffness = RandomInt(100);
 	posDrive.damping = RandomInt(10);
-	posDrive.maxForce = RandomInt(1000);
+	posDrive.maxForce = RandomInt(10);
 	posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
 
 	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, RandomPointOnParent, MaxJointVel, JointOscillationSpeed, JointAxis, posDrive);
+	mShapes.emplace(NewPart, BoundingBox(mShapes[ParentPart].GetPosition() + RandomRelativePosition, RandomScale));
 }
 
 void Creature::SetPosition(vec3 Position)
@@ -191,6 +294,7 @@ void Creature::EnableGravity(bool NewState)
 	}
 }
 
+/// TODO: Use the bounding boxes to make sure that the mutations don't overlap anything
 Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float MutationChance, float MutationSeverity)
 {
 	float MinMutationAmount = 1 - MutationSeverity;
@@ -206,8 +310,7 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 	}
 
 	Creature* NewCreature = new Creature(Physics, mRootPart->mPhysicsMaterial, mRootPart->mShapeFlags, mRootPart->mNode, RootScale);
-
-
+	NewCreature->mShapes.emplace(mRootPart, BoundingBox(vec3(), RootScale));
 
 	std::vector<CreaturePart*> PartsToLookAt = { mRootPart };
 	std::vector<CreaturePart*> MutatedPartsToLookAt = { NewCreature->mRootPart };
@@ -297,6 +400,7 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 			CreaturePart* NewPart = CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, MutatedScale, 
 																MutatedRelativePosition, MutatedJointPosition, MutatedMaxJointVel, MutatedJointOscillationSpeed, MutatedJointAxis, 
 																ChildPart->mJoint->getDriveParams(ChildPart->mJointAxis));
+			NewCreature->mShapes.emplace(NewPart, BoundingBox(MutatedRelativePosition, MutatedScale));
 
 			PartsToLookAt.push_back(ChildPart);
 			MutatedPartsToLookAt.push_back(NewPart);

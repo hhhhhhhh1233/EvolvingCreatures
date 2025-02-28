@@ -3,12 +3,14 @@
 #include "config.h"
 #include <physx/PxPhysicsAPI.h>
 #include "CreaturePart.h"
+#include "BoundingBox.h"
 
 class Creature
 {
 public:
 	physx::PxArticulationReducedCoordinate* mArticulation;
 	CreaturePart* mRootPart;
+	std::map<CreaturePart*, BoundingBox> mShapes;
 	
 	Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale);
 	~Creature();
@@ -17,7 +19,10 @@ public:
 	CreaturePart* GetRandomPart();
 	std::vector<CreaturePart*> GetAllParts();
 	std::vector<CreaturePart*> GetAllPartsFrom(CreaturePart* Part);
+	void DrawBoundingBoxes(mat4 ViewProjection, vec3 Position, GraphicsNode Node);
+	bool IsColliding(BoundingBox Box, CreaturePart* ToIgnore = nullptr);
 
+	std::pair<BoundingBox, CreaturePart*> GetRandomShape();
 	void AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node);
 	void SetPosition(vec3 Position);
 	void ClearForceAndTorque();

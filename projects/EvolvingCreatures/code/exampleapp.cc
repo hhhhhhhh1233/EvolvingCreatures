@@ -87,7 +87,10 @@ ExampleApp::Close()
 void
 ExampleApp::Run()
 {
+	///// Temporarily seed the random so I don't have to worry about that mucking up my testing
+	//srand(3);
 	srand(time(NULL));
+
 	/// ---------------------------------------- 
 	/// [BEGIN] SHADOW MAPPING
 	/// ---------------------------------------- 
@@ -116,9 +119,6 @@ ExampleApp::Run()
 	/// ---------------------------------------- 
 	/// [END] SHADOW MAPPING
 	/// ---------------------------------------- 
-
-	TextureResource furTexture;
-	furTexture.LoadFromFile("Assets\\images\\fur.jpg");
 
 	TextureResource gridTexture;
 	gridTexture.LoadFromFile("Assets\\images\\Grid.jpg");
@@ -261,6 +261,17 @@ ExampleApp::Run()
 	vec3 FirstChildJointPosition(0, RootScale.y, 0);
 	vec3 ChildJointPosition(0, ChildScale.y, 0);
 
+	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+
+	//NewCreature->EnableGravity(false);
+
 	//CreaturePart* a = NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, FirstChildPosition, FirstChildJointPosition, 20, 3);
 	//CreaturePart* b = a->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
 	//CreaturePart* c = b->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
@@ -271,7 +282,7 @@ ExampleApp::Run()
 
 	Creature* MutatedCreature = NewCreature->GetMutatedCreature(Physics, 1.5, 0.5);
 	MutatedCreature->SetPosition(vec3(5, 10, 0));
-	MutatedCreature->AddToScene(mScene);
+	//MutatedCreature->AddToScene(mScene);
 
 	/// ------------------------------------------
 	/// [END] CREATE ACTORS
@@ -367,6 +378,11 @@ ExampleApp::Run()
 		ImGui::End();
 	});
 
+	//float TestAccumulator = 0;
+	//float TestBoxUpdateTime = 5;
+	//BoundingBox TestBox;
+	//CreaturePart* ParentToTestBox = nullptr;
+
 	const auto [ SCR_WIDTH, SCR_HEIGHT ] = window->GetWidthHeight();
 
 	while (this->window->IsOpen())
@@ -412,8 +428,8 @@ ExampleApp::Run()
 		{
 			if (bActiveCreature)
 			{
-				NewCreature->Activate(timesincestart);
-				MutatedCreature->Activate(timesincestart);
+				//NewCreature->Activate(timesincestart);
+				//MutatedCreature->Activate(timesincestart);
 				if (GenMan->mCurrentState == GenerationManagerState::Running)
 					GenMan->Activate(GenMan->mCurrentGenerationDuration);
 				else if (GenMan->mCurrentState != GenerationManagerState::Waiting)
@@ -507,7 +523,28 @@ ExampleApp::Run()
 		sphere.draw(viewProjection);
 
 		//NewCreature->Draw(viewProjection);
+
+		//TestAccumulator += deltaseconds;
+		//if (TestAccumulator > TestBoxUpdateTime)
+		//{
+		//	TestAccumulator -= TestBoxUpdateTime;
+		//	std::pair<BoundingBox, CreaturePart*> Temp  = NewCreature->GetRandomShape();
+		//	TestBox = Temp.first;
+		//	ParentToTestBox = Temp.second;
+		//}
+		//if (NewCreature->IsColliding(TestBox, ParentToTestBox))
+		//{
+		//	artCube.transform = translate(vec3(0, 20, 0) + TestBox.GetPosition()) * scale(TestBox.GetScale());
+		//	artCube.draw(viewProjection);
+		//}
+		//else
+		//{
+		//	cube.transform = translate(vec3(0, 20, 0) + TestBox.GetPosition()) * scale(TestBox.GetScale());
+		//	cube.draw(viewProjection);
+		//}
+
 		//MutatedCreature->Draw(viewProjection);
+		//NewCreature->DrawBoundingBoxes(viewProjection, vec3(0, 20, 0), cube);
 		if (GenMan->mCurrentState == GenerationManagerState::Running || GenMan->mCurrentState == GenerationManagerState::Waiting)
 			GenMan->DrawCreatures(viewProjection);
 		else if (GenMan->mCurrentState == GenerationManagerState::Finished)
