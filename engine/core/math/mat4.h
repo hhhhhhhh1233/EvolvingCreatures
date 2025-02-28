@@ -233,6 +233,15 @@ inline mat4 scale(float scaleX, float scaleY, float scaleZ)
 				vec4(0, 0, 0, 1));
 }
 
+// Generates a matrix that scales an object
+inline mat4 scale(vec3 scale)
+{
+	return mat4(vec4(scale.x, 0, 0, 0),
+				vec4(0, scale.y, 0, 0),
+				vec4(0, 0, scale.z, 0),
+				vec4(0, 0, 0, 1));
+}
+
 // Generates a matrix that scales an object but only takes one argument
 inline mat4 scale(float scale)
 {
