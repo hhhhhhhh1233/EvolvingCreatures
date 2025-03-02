@@ -23,6 +23,7 @@
 #include "GenerationManager.h"
 
 #include "imgui.h"
+#include "RandomUtils.h"
 
 using namespace Display;
 namespace Example
@@ -339,6 +340,13 @@ ExampleApp::Run()
 				if (CreatureIndexToDraw >= GenMan->mSortedCreatures.size())
 					CreatureIndexToDraw = 0;
 			}
+
+			//static char* CreatureName = new char[30];
+			//ImGui::InputText("Creature Name", CreatureName, 30);
+			if (ImGui::Button("Save Creature"))
+			{
+				SaveCreatureToFile(GenMan->mSortedCreatures[CreatureIndexToDraw].first, "Creatures/Creature" + std::to_string(RandomInt(100000)) + ".creature");
+			}
 			ImGui::Text("Drawing creature %d/%d", CreatureIndexToDraw, GenMan->mSortedCreatures.size() - 1);
 			ImGui::Text("Creature Stats");
 			ImGui::Text("Creature Fitness: %f", GenMan->mSortedCreatures[CreatureIndexToDraw].second);
@@ -353,6 +361,21 @@ ExampleApp::Run()
 		}
 		else if (GenMan->mCurrentState == GenerationManagerState::Nothing)
 		{
+			std::string path = "Creatures";
+			std::vector<char*> Entries;
+			for (const auto& entry : std::filesystem::directory_iterator(path))
+			{
+				char* file = new char[entry.path().u8string().size() + 1];
+				std::strcpy(file, entry.path().u8string().c_str());
+				Entries.push_back(file);
+			}
+			static int CurrentItem = 0;
+			ImGui::ListBox("", &CurrentItem, Entries.data(), Entries.size());
+			if (ImGui::Button("Load Creature"))
+			{
+				GenMan->LoadCreature(Entries[CurrentItem]);
+			}
+
 			ImGui::Text("Evolution Options");
 			ImGui::DragInt("How many creatures", &NumberOfCreatures, 1, 5, 500);
 			ImGui::DragInt("How many to keep per gen", &GenerationSurvivors, 1, 5, NumberOfCreatures);
@@ -449,6 +472,9 @@ ExampleApp::Run()
 					GenMan->Activate(GenMan->mCurrentGenerationDuration);
 				else if (GenMan->mCurrentState != GenerationManagerState::Waiting)
 					GenMan->Activate(timesincestart);
+
+				if (GenMan->mCurrentState == GenerationManagerState::Nothing)
+					GenMan->ActivateLoadedCreatures(timesincestart);
 			}
 
 			mScene->simulate(mStepSize);
@@ -570,6 +596,8 @@ ExampleApp::Run()
 			if (bDrawBoundingBox)
 				GenMan->mSortedCreatures[CreatureIndexToDraw].first->DrawBoundingBoxes(viewProjection, vec3(0, 20, 0), cube);
 		}
+
+		GenMan->UpdateAndDrawLoadedCreatures(viewProjection);
 
 		Quad.draw(viewProjection);
 

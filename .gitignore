@@ -30,6 +30,8 @@ x86/
 bld/
 [Bb]in/*
 ![Bb]in/[Aa]ssets
+![Bb]in/[Cc]reatures
+*.creature
 [Oo]bj/
 [Ll]og/
 

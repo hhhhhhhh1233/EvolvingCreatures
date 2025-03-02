@@ -1,0 +1,34 @@
+namespace EvolvingCreature;
+
+struct Vec3 {
+	x:float;
+	y:float;
+	z:float;
+}
+
+enum ArticulationAxis:byte {
+	eTWIST = 0,		//!< Rotational about eX
+	eSWING1 = 1,	//!< Rotational about eY
+	eSWING2 = 2,	//!< Rotational about eZ
+}
+
+table CreaturePart {
+	scale:Vec3;
+	relative_position:Vec3;
+	joint_position:Vec3;
+	max_joint_vel:float;
+	joint_oscillation_speed:float;
+	joint_axis:ArticulationAxis;
+
+	joint_drive_stiffness:float;
+	joint_drive_damping:float;
+	joint_drive_max_force:float;
+
+	children:[CreaturePart];
+}
+
+table Creature {
+	root_part:CreaturePart;
+}
+
+root_type Creature;

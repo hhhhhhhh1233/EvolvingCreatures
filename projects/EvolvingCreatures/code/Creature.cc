@@ -1,5 +1,7 @@
 #include "Creature.h"
 #include "RandomUtils.h"
+#include "flatbuffers/flatbuffers.h"
+#include "Creature_generated.h"
 
 Creature::Creature(physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale)
 {
@@ -251,7 +253,7 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	posDrive.stiffness = RandomInt(100);
 	posDrive.damping = RandomInt(10);
 	posDrive.maxForce = RandomInt(10);
-	posDrive.driveType = physx::PxArticulationDriveType::eFORCE;
+	posDrive.driveType = physx::PxArticulationDriveType::eACCELERATION;
 
 	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, RandomPointOnParent, MaxJointVel, JointOscillationSpeed, JointAxis, posDrive);
 	mShapes.emplace(NewPart, BoundingBox(mShapes[ParentPart].GetPosition() + RandomRelativePosition, RandomScale));
@@ -334,7 +336,7 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 	}
 
 	Creature* NewCreature = new Creature(Physics, mRootPart->mPhysicsMaterial, mRootPart->mShapeFlags, mRootPart->mNode, RootScale);
-	NewCreature->mShapes.emplace(mRootPart, BoundingBox(vec3(), RootScale));
+	NewCreature->mShapes.emplace(NewCreature->mRootPart, BoundingBox(vec3(), RootScale));
 
 	std::vector<CreaturePart*> PartsToLookAt = { mRootPart };
 	std::vector<CreaturePart*> MutatedPartsToLookAt = { NewCreature->mRootPart };
@@ -444,4 +446,119 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 	}
 
 	return NewCreature;
+}
+
+Creature* LoadCreatureFromFile(std::string FileName, physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node)
+{
+	std::ifstream infile(FileName, std::ios::binary | std::ios::in);
+	infile.seekg(0, std::ios::end);
+	int length = infile.tellg();
+	infile.seekg(0, std::ios::beg);
+	char* data = new char[length];
+	infile.read(data, length);
+	infile.close();
+
+	auto InCreature = EvolvingCreature::GetCreature(data);
+
+	auto RootScaleV = InCreature->root_part()->scale();
+	vec3 RootScale(RootScaleV->x(), RootScaleV->y(), RootScaleV->z());
+
+	Creature* NewCreature = new Creature(Physics, PhysicsMaterial, ShapeFlags, Node, RootScale);
+	NewCreature->mShapes.emplace(NewCreature->mRootPart, BoundingBox(vec3(), RootScale));
+
+	std::vector<const EvolvingCreature::CreaturePart*> PartsToLookAt = { InCreature->root_part() };
+	std::vector<CreaturePart*> NewPartsToLookAt = { NewCreature->mRootPart };
+
+	while (PartsToLookAt.size() > 0)
+	{
+		const EvolvingCreature::CreaturePart* CurrentPart = PartsToLookAt[0];
+		PartsToLookAt.erase(PartsToLookAt.begin());
+
+		CreaturePart* NewCurrentPart = NewPartsToLookAt[0];
+		NewPartsToLookAt.erase(NewPartsToLookAt.begin());
+
+		for (int i = 0; i < CurrentPart->children()->size(); i++)
+		{
+			auto scale = CurrentPart->children()->Get(i)->scale();
+			auto relative_position = CurrentPart->children()->Get(i)->relative_position();
+			auto joint_position = CurrentPart->children()->Get(i)->joint_position();
+
+			float max_joint_vel = CurrentPart->children()->Get(i)->max_joint_vel();
+			float joint_oscillation_speed = CurrentPart->children()->Get(i)->joint_oscillation_speed();
+
+			auto joint_axis = CurrentPart->children()->Get(i)->joint_axis();
+
+			vec3 Scale(scale->x(), scale->y(), scale->z());
+			vec3 RelativePosition(relative_position->x(), relative_position->y(), relative_position->z());
+			vec3 JointPosition(joint_position->x(), joint_position->y(), joint_position->z());
+
+			physx::PxArticulationDrive posDrive;
+			posDrive.stiffness = CurrentPart->children()->Get(i)->joint_drive_stiffness();
+			posDrive.damping = CurrentPart->children()->Get(i)->joint_drive_damping();
+			posDrive.maxForce = CurrentPart->children()->Get(i)->joint_drive_max_force();
+			posDrive.driveType = physx::PxArticulationDriveType::eACCELERATION;
+
+			CreaturePart* NewPart = NewCurrentPart->AddChild(Physics, NewCreature->mArticulation, PhysicsMaterial, ShapeFlags, Node, Scale, 
+																RelativePosition, JointPosition, max_joint_vel, joint_oscillation_speed, (physx::PxArticulationAxis::Enum)joint_axis, 
+																posDrive);
+
+			NewCreature->mShapes.emplace(NewPart, BoundingBox(RelativePosition, Scale));
+
+			PartsToLookAt.push_back(CurrentPart->children()->Get(i));
+			NewPartsToLookAt.push_back(NewPart);
+		}
+	}
+
+	delete[] data;
+
+	return NewCreature;
+}
+
+static flatbuffers::Offset<EvolvingCreature::CreaturePart> CreateFlatbufferCreaturePart(flatbuffers::FlatBufferBuilder &Builder, CreaturePart* Part)
+{
+	std::vector<flatbuffers::Offset<EvolvingCreature::CreaturePart>> CreatureParts;
+
+	for (auto Child : Part->mChildren)
+	{
+		CreatureParts.push_back(CreateFlatbufferCreaturePart(Builder, Child));
+	}
+
+	auto BuPartScale = EvolvingCreature::Vec3(Part->mScale.x, Part->mScale.y, Part->mScale.z);
+	auto BuPartRelativePosition = EvolvingCreature::Vec3(Part->mRelativePosition.x, Part->mRelativePosition.y, Part->mRelativePosition.z);
+	auto BuPartJointPosition = EvolvingCreature::Vec3(Part->mJointPosition.x, Part->mJointPosition.y, Part->mJointPosition.z);
+
+	float BuDriveStiffness = 0;
+	float BuDriveDamping = 0;
+	float BuDriveMaxForce = 0;
+
+	/// The root node doesn't have a joint so I have to ignore that ones values
+	if (Part->mJoint != nullptr)
+	{
+		BuDriveStiffness = Part->mJoint->getDriveParams(Part->mJointAxis).stiffness;
+		BuDriveDamping = Part->mJoint->getDriveParams(Part->mJointAxis).damping;
+		BuDriveMaxForce = Part->mJoint->getDriveParams(Part->mJointAxis).maxForce;
+	}
+
+	auto Parts = Builder.CreateVector(CreatureParts);
+	auto BuPart = EvolvingCreature::CreateCreaturePart(Builder, &BuPartScale, &BuPartRelativePosition, &BuPartJointPosition, 
+			Part->mMaxJointVel, Part->mJointOscillationSpeed, (EvolvingCreature::ArticulationAxis)Part->mJointAxis, BuDriveStiffness,
+			BuDriveDamping, BuDriveMaxForce, Parts);
+
+	return BuPart;
+}
+
+void SaveCreatureToFile(Creature* CreatureToSave, std::string FileName)
+{
+	flatbuffers::FlatBufferBuilder builder(1024);
+
+	auto RootPart = CreateFlatbufferCreaturePart(builder, CreatureToSave->mRootPart);
+	auto Creature = EvolvingCreature::CreateCreature(builder, RootPart);
+
+	builder.Finish(Creature);
+
+	/// Write the buffer to a file
+	std::ofstream ofile(FileName, std::ios::binary);
+	assert(ofile.is_open());
+	ofile.write((char*)builder.GetBufferPointer(), builder.GetSize());
+	ofile.close();
 }

@@ -91,6 +91,12 @@ void GenerationManager::Simulate(float StepSize)
 			creature->mSumHorizontalSpeed += HorizontalVel.magnitude();
 		}
 	}
+
+	for (auto creature : mLoadedCreatures)
+	{
+		creature->mScene->simulate(StepSize);
+		creature->mScene->fetchResults(true);
+	}
 }
 
 void GenerationManager::UpdateCreatures()
@@ -128,11 +134,19 @@ void GenerationManager::SetPositionOfCreatures(vec3 Position)
 	}
 }
 
-void GenerationManager::Activate(float Force)
+void GenerationManager::Activate(float Vel)
 {
 	for (auto creature : mCreatures)
 	{
-		creature->mCreature->Activate(Force);
+		creature->mCreature->Activate(Vel);
+	}
+}
+
+void GenerationManager::ActivateLoadedCreatures(float Vel)
+{
+	for (auto creature : mLoadedCreatures)
+	{
+		creature->mCreature->Activate(Vel);
 	}
 }
 
@@ -400,4 +414,63 @@ void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeve
 	}
 
 	MaterialPtr->release();
+}
+
+void GenerationManager::LoadCreature(std::string FileName)
+{
+	physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
+	physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+
+	Creature* LoadedCreature = LoadCreatureFromFile(FileName, mPhysics, MaterialPtr, ShapeFlags, mCubeNode);
+
+	/// ----------------------------------------
+	/// [BEGIN] CREATURE PERSONAL SCENE SETUP
+	/// ----------------------------------------
+
+	physx::PxTolerancesScale ToleranceScale;
+
+	ToleranceScale.length = 1;
+	ToleranceScale.speed = 981;
+
+	physx::PxSceneDesc SceneDesc(ToleranceScale);
+	SceneDesc.gravity = { 0, -9.8, 0 };
+	SceneDesc.cpuDispatcher = mDispatcher;
+	SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+	SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+
+	physx::PxScene* Scene = mPhysics->createScene(SceneDesc);
+	Scene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
+
+	physx::PxRigidStatic* PlaneCollision = mPhysics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
+	{
+		physx::PxShape* shape = mPhysics->createShape(physx::PxPlaneGeometry(), &MaterialPtr, 1, true, ShapeFlags);
+		PlaneCollision->attachShape(*shape);
+		shape->release();
+	}
+
+	Scene->addActor(*PlaneCollision);
+
+	/// ----------------------------------------
+	/// [END] CREATURE PERSONAL SCENE SETUP
+	/// ----------------------------------------
+
+	CreatureStats* Stats = new CreatureStats(LoadedCreature, Scene, PlaneCollision);
+
+	LoadedCreature->AddToScene(Scene);
+
+	LoadedCreature->SetPosition(vec3(0, 20, 0));
+
+	mLoadedCreatures.push_back(Stats);
+
+	MaterialPtr->release();
+}
+
+void GenerationManager::UpdateAndDrawLoadedCreatures(mat4 ViewProjection)
+{
+	for (auto Creature : mLoadedCreatures)
+	{
+		Creature->mCreature->Update();
+		Creature->mCreature->Draw(ViewProjection);
+	}
 }

@@ -42,5 +42,5 @@ public:
 };
 
 /// TODO: Implement these features so that interesting creatures can be saved for later
-Creature* LoadCreatureFromFile(std::string FileName);
+Creature* LoadCreatureFromFile(std::string FileName, physx::PxPhysics* Physics, physx::PxMaterial* PhysicsMaterial, physx::PxShapeFlags ShapeFlags, GraphicsNode Node);
 void SaveCreatureToFile(Creature* CreatureToSave, std::string FileName);

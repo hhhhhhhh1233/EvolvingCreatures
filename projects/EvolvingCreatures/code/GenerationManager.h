@@ -35,6 +35,8 @@ enum GenerationManagerState {
 class GenerationManager
 {
 public:
+
+/// FIELDS
 	unsigned int mGenerationSize = 50;
 	std::vector<CreatureStats*> mCreatures;
 	physx::PxPhysics* mPhysics;
@@ -43,9 +45,6 @@ public:
 	GraphicsNode mCubeNode;
 
 	GenerationManagerState mCurrentState = GenerationManagerState::Nothing;
-
-	/// Variables for keeping track of the generations
-	//bool bRunningGenerations = false;
 
 	unsigned int mCurrentGeneration = 0;
 	unsigned int mNumberOfGenerations = 0;
@@ -57,15 +56,16 @@ public:
 	float mMutationChance; 
 	float mMutationSeverity;
 
-	//bool bFinishedAllGenerations = false;
-
 	/// Variables for keeping track of how long an evaluation period was, in seconds
-	//bool bEvaluating = false;
 	std::chrono::steady_clock::time_point mEvaluationStartTime;
 	float mEvaluationDuration;
 
 	std::vector<std::pair<Creature*, float>> mSortedCreatures;
 
+	/// These are not part of the generations, they are loaded in from file by the user
+	std::vector<CreatureStats*> mLoadedCreatures;
+
+/// METHODS
 	GenerationManager(physx::PxPhysics* Physics, physx::PxDefaultCpuDispatcher* Dispatcher, GraphicsNode CubeNode);
 
 	/// This will populate the vector above with creatures and scenes with a plane, with mGenerationSize amount of creatures
@@ -77,6 +77,7 @@ public:
 	void DrawFinishedCreatures(mat4 ViewProjection, int CreatureIndex);
 	void SetPositionOfCreatures(vec3 Position);
 	void Activate(float Vel);
+	void ActivateLoadedCreatures(float Vel);
 
 	void Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity);
 	void Update(float DeltaTime);
@@ -89,4 +90,7 @@ public:
 
 	/// Mutate the creatures based on the ones that were fit to fill up the mCreatures vector to the set generation size
 	void EvolveCreatures(float MutationChance, float MutationSeverity);
+
+	void LoadCreature(std::string FileName);
+	void UpdateAndDrawLoadedCreatures(mat4 ViewProjection);
 };
