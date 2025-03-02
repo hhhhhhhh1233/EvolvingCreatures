@@ -365,9 +365,12 @@ ExampleApp::Run()
 			std::vector<char*> Entries;
 			for (const auto& entry : std::filesystem::directory_iterator(path))
 			{
-				char* file = new char[entry.path().u8string().size() + 1];
-				std::strcpy(file, entry.path().u8string().c_str());
-				Entries.push_back(file);
+				if (entry.path().string().find(".creature") != std::string::npos)
+				{
+					char* file = new char[entry.path().u8string().size() + 1];
+					std::strcpy(file, entry.path().u8string().c_str());
+					Entries.push_back(file);
+				}
 			}
 			static int CurrentItem = 0;
 			ImGui::ListBox("", &CurrentItem, Entries.data(), Entries.size());
