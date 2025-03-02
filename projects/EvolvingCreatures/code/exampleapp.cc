@@ -323,7 +323,19 @@ ExampleApp::Run()
 		{
 			ImGui::Text("Evolution Finished");
 
-			ImGui::DragInt("Which Creature to Draw", &CreatureIndexToDraw, 1, 0, GenMan->mSortedCreatures.size() - 1);
+			if (ImGui::Button("Prev"))
+			{
+				CreatureIndexToDraw--;
+				if (CreatureIndexToDraw < 0)
+					CreatureIndexToDraw = GenMan->mSortedCreatures.size() - 1;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Next"))
+			{
+				CreatureIndexToDraw++;
+				if (CreatureIndexToDraw >= GenMan->mSortedCreatures.size())
+					CreatureIndexToDraw = 0;
+			}
 			ImGui::Text("Drawing creature %d/%d", CreatureIndexToDraw, GenMan->mSortedCreatures.size() - 1);
 			ImGui::Text("Creature Stats");
 			ImGui::Text("Creature Fitness: %f", GenMan->mSortedCreatures[CreatureIndexToDraw].second);
