@@ -26,9 +26,33 @@ CreaturePart* Creature::GetChildlessPart() const
 	CreaturePart* CurrentPart = mRootPart;
 
 	while (CurrentPart->mChildren.size() > 0)
-		CurrentPart = CurrentPart->mChildren[0];
+		CurrentPart = CurrentPart->mChildren[RandomInt(CurrentPart->mChildren.size())];
 
 	return CurrentPart;
+}
+
+void Creature::RemoveChildlessPart()
+{
+	CreaturePart* Parent = nullptr;
+	CreaturePart* CurrentPart = mRootPart;
+	int ChildIndex = 0;
+
+	while (CurrentPart->mChildren.size() > 0)
+	{
+		Parent = CurrentPart;
+		ChildIndex = RandomInt(CurrentPart->mChildren.size());
+		CurrentPart = CurrentPart->mChildren[ChildIndex];
+	}
+
+	if (Parent == nullptr)
+	{
+		assert(false, "NO PART TO DELETE");
+		return;
+	}
+
+	mShapes.erase(CurrentPart);
+	delete Parent->mChildren[ChildIndex];
+	Parent->mChildren.erase(Parent->mChildren.begin() + ChildIndex);
 }
 
 CreaturePart* Creature::GetRandomPart()
@@ -411,6 +435,12 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 	if (RandomFloat() < MutationChance)
 	{
 		NewCreature->AddRandomPart(Physics, NewCreature->mRootPart->mPhysicsMaterial, NewCreature->mRootPart->mShapeFlags, NewCreature->mRootPart->mNode);
+	}
+
+	/// Random chance to remove part part
+	if (RandomFloat() < MutationChance)
+	{
+		NewCreature->RemoveChildlessPart();
 	}
 
 	return NewCreature;

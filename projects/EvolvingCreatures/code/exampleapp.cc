@@ -299,7 +299,8 @@ ExampleApp::Run()
 	bool bSimulateGravity = true;
 	int BodyPartsNum = 2;
 	int CreatureIndexToDraw = 0;
-	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw]()
+	bool bDrawBoundingBox = false;
+	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox]()
 	{
 		bool show = true;
 		// create a new window
@@ -322,6 +323,8 @@ ExampleApp::Run()
 		if (GenMan->mCurrentState == GenerationManagerState::Finished)
 		{
 			ImGui::Text("Evolution Finished");
+
+			ImGui::Checkbox("Draw creature bounding box", &bDrawBoundingBox);
 
 			if (ImGui::Button("Prev"))
 			{
@@ -558,9 +561,15 @@ ExampleApp::Run()
 		//MutatedCreature->Draw(viewProjection);
 		//NewCreature->DrawBoundingBoxes(viewProjection, vec3(0, 20, 0), cube);
 		if (GenMan->mCurrentState == GenerationManagerState::Running || GenMan->mCurrentState == GenerationManagerState::Waiting)
+		{
 			GenMan->DrawCreatures(viewProjection);
+		}
 		else if (GenMan->mCurrentState == GenerationManagerState::Finished)
+		{
 			GenMan->DrawFinishedCreatures(viewProjection, CreatureIndexToDraw);
+			if (bDrawBoundingBox)
+				GenMan->mSortedCreatures[CreatureIndexToDraw].first->DrawBoundingBoxes(viewProjection, vec3(0, 20, 0), cube);
+		}
 
 		Quad.draw(viewProjection);
 

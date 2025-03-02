@@ -16,6 +16,7 @@ public:
 	~Creature();
 
 	CreaturePart* GetChildlessPart() const;
+	void RemoveChildlessPart();
 	CreaturePart* GetRandomPart();
 	std::vector<CreaturePart*> GetAllParts();
 	std::vector<CreaturePart*> GetAllPartsFrom(CreaturePart* Part);
