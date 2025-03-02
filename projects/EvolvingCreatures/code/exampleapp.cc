@@ -85,6 +85,25 @@ ExampleApp::Close()
 //------------------------------------------------------------------------------
 /**
 */
+static void FindCreatureFiles(std::string path, std::vector<char*>& Entries)
+{
+	for (int i = 0; i < Entries.size(); i++)
+	{
+		delete Entries[i];
+	}
+	Entries.erase(Entries.begin(), Entries.end());
+
+	for (const auto& entry : std::filesystem::directory_iterator(path))
+	{
+		if (entry.path().string().find(".creature") != std::string::npos)
+		{
+			char* file = new char[entry.path().u8string().size() + 1];
+			std::strcpy(file, entry.path().u8string().c_str());
+			Entries.push_back(file);
+		}
+	}
+}
+
 void
 ExampleApp::Run()
 {
@@ -301,7 +320,11 @@ ExampleApp::Run()
 	int BodyPartsNum = 2;
 	int CreatureIndexToDraw = 0;
 	bool bDrawBoundingBox = false;
-	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox]()
+
+	std::vector<char*> Entries;
+	FindCreatureFiles("Creatures", Entries);
+
+	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox, &Entries]()
 	{
 		bool show = true;
 		// create a new window
@@ -361,24 +384,24 @@ ExampleApp::Run()
 		}
 		else if (GenMan->mCurrentState == GenerationManagerState::Nothing)
 		{
-			std::string path = "Creatures";
-			std::vector<char*> Entries;
-			for (const auto& entry : std::filesystem::directory_iterator(path))
+			ImGui::Columns(2);
+			ImGui::Text("Saved Creatures");
+			if (ImGui::Button("Refresh"))
 			{
-				if (entry.path().string().find(".creature") != std::string::npos)
-				{
-					char* file = new char[entry.path().u8string().size() + 1];
-					std::strcpy(file, entry.path().u8string().c_str());
-					Entries.push_back(file);
-				}
-			}
-			static int CurrentItem = 0;
-			ImGui::ListBox("", &CurrentItem, Entries.data(), Entries.size());
-			if (ImGui::Button("Load Creature"))
-			{
-				GenMan->LoadCreature(Entries[CurrentItem]);
+				FindCreatureFiles("Creatures", Entries);
 			}
 
+			if (Entries.size() > 0)
+			{
+				static int CurrentItem = 0;
+				ImGui::ListBox("", &CurrentItem, Entries.data(), Entries.size(), 5);
+				if (ImGui::Button("Load Creature"))
+				{
+					GenMan->LoadCreature(Entries[CurrentItem]);
+				}
+			}
+
+			ImGui::NextColumn();
 			ImGui::Text("Evolution Options");
 			ImGui::DragInt("How many creatures", &NumberOfCreatures, 1, 5, 500);
 			ImGui::DragInt("How many to keep per gen", &GenerationSurvivors, 1, 5, NumberOfCreatures);
@@ -396,6 +419,7 @@ ExampleApp::Run()
 				GenMan->Start(NumberOfGenerations, EvaluationTime, GenerationSurvivors, MutationChance, MutationSeverity);
 				GenMan->GenerateCreatures(NumberOfCreatures);
 			}
+			ImGui::Columns(1);
 		}
 		else
 		{
