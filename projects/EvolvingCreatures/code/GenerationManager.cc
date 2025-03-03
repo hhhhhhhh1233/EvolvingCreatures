@@ -37,8 +37,6 @@ void GenerationManager::GenerateCreatures(int GenerationSize)
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
 
-		//physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
-
 		physx::PxTolerancesScale ToleranceScale;
 
 		ToleranceScale.length = 1;
@@ -46,7 +44,6 @@ void GenerationManager::GenerateCreatures(int GenerationSize)
 
 		physx::PxSceneDesc SceneDesc(ToleranceScale);
 		SceneDesc.gravity = { 0, -9.8, 0 };
-		//Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 		SceneDesc.cpuDispatcher = mDispatcher;
 		SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
 		SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
@@ -154,6 +151,12 @@ void GenerationManager::Start(int NumberOfGenerations, float GenTime, int Genera
 {
 	mCurrentState = GenerationManagerState::Running;
 
+	/// Clear out all loaded creatures
+	while (mLoadedCreatures.size() > 0)
+	{
+		RemoveLoadedCreature(0);
+	}
+
 	/// Clear the sorted list of victors
 	mSortedCreatures.erase(mSortedCreatures.begin(), mSortedCreatures.end());
 
@@ -166,8 +169,6 @@ void GenerationManager::Start(int NumberOfGenerations, float GenTime, int Genera
 
 	mCurrentGeneration = 0;
 	mCurrentGenerationDuration = 0;
-
-	//bRunningGenerations = true;
 
 	StartEvalutation();
 }
@@ -207,8 +208,6 @@ void GenerationManager::Update(float DeltaTime)
 
 			if (mCurrentGeneration >= mNumberOfGenerations)
 			{
-				//bRunningGenerations = false;
-				//bFinishedAllGenerations = true;
 				mCurrentState = GenerationManagerState::Finished;
 
 				for (auto creature : mCreatures)
@@ -241,20 +240,17 @@ void GenerationManager::StartEvalutation()
 		creature->mSumHorizontalSpeed = 0;
 	}
 
-	//bEvaluating = true;
 	mEvaluationStartTime = std::chrono::high_resolution_clock::now();
 }
 
 void GenerationManager::EndEvaluation()
 {
 	mEvaluationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - mEvaluationStartTime).count() / 1000.f;
-	//bEvaluating = false;
 
 	for (auto creature : mCreatures)
 	{
 		creature->mAverageSpeed = creature->mSumHorizontalSpeed / mEvaluationDuration;
 
-		//creature->mFitness = creature->mAverageSpeed + creature->mCreature->mRootPart->mLink->getGlobalPose().p.magnitude();
 		/// This is to only consider horizontal movement interesting in fitness calculation
 		physx::PxVec3 Pos = creature->mCreature->mRootPart->mLink->getGlobalPose().p;
 		Pos = { Pos.x, 0, Pos.z };
@@ -314,8 +310,6 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
 
-		//physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
-
 		physx::PxTolerancesScale ToleranceScale;
 
 		ToleranceScale.length = 1;
@@ -323,7 +317,6 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 
 		physx::PxSceneDesc SceneDesc(ToleranceScale);
 		SceneDesc.gravity = { 0, -9.8, 0 };
-		//Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 		SceneDesc.cpuDispatcher = mDispatcher;
 		SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
 		SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
@@ -375,8 +368,6 @@ void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeve
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
 
-		//physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
-
 		physx::PxTolerancesScale ToleranceScale;
 
 		ToleranceScale.length = 1;
@@ -384,7 +375,6 @@ void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeve
 
 		physx::PxSceneDesc SceneDesc(ToleranceScale);
 		SceneDesc.gravity = { 0, -9.8, 0 };
-		//Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 		SceneDesc.cpuDispatcher = mDispatcher;
 		SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
 		SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;

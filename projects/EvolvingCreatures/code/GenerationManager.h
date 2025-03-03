@@ -52,13 +52,13 @@ public:
 	float mGenerationDurationSeconds = 60.0f;
 	float mCurrentGenerationDuration = 0.0f;
 
-	int mGenerationSurvivors; 
-	float mMutationChance; 
-	float mMutationSeverity;
+	int mGenerationSurvivors = 0; 
+	float mMutationChance = 0; 
+	float mMutationSeverity = 0;
 
 	/// Variables for keeping track of how long an evaluation period was, in seconds
 	std::chrono::steady_clock::time_point mEvaluationStartTime;
-	float mEvaluationDuration;
+	float mEvaluationDuration = 0;
 
 	std::vector<std::pair<Creature*, float>> mSortedCreatures;
 
