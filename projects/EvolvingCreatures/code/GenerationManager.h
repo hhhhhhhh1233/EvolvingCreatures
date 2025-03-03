@@ -64,6 +64,7 @@ public:
 
 	/// These are not part of the generations, they are loaded in from file by the user
 	std::vector<CreatureStats*> mLoadedCreatures;
+	std::vector<char*> mLoadedCreatureNames;
 
 /// METHODS
 	GenerationManager(physx::PxPhysics* Physics, physx::PxDefaultCpuDispatcher* Dispatcher, GraphicsNode CubeNode);
@@ -93,4 +94,6 @@ public:
 
 	void LoadCreature(std::string FileName);
 	void UpdateAndDrawLoadedCreatures(mat4 ViewProjection);
+	void SetLoadedCreaturePosition(int CreatureIndex, vec3 Position);
+	void RemoveLoadedCreature(int CreatureIndex);
 };

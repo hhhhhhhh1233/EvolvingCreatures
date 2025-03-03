@@ -344,10 +344,12 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 		/// ----------------------------------------
 		/// [END] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
+		Creature* CopyOfTheGoat = SortedCreatures[i].first->GetCreatureCopy(mPhysics);
+		//SortedCreatures[i].first->AddToScene(Scene);
+		CopyOfTheGoat->AddToScene(Scene);
 
-		SortedCreatures[i].first->AddToScene(Scene);
-
-		CreatureStats* a = new CreatureStats(SortedCreatures[i].first, Scene, PlaneCollision);
+		//CreatureStats* a = new CreatureStats(SortedCreatures[i].first, Scene, PlaneCollision);
+		CreatureStats* a = new CreatureStats(CopyOfTheGoat, Scene, PlaneCollision);
 		a->mFitness = SortedCreatures[i].second;
 
 		mCreatures.push_back(a);
@@ -463,6 +465,25 @@ void GenerationManager::LoadCreature(std::string FileName)
 
 	mLoadedCreatures.push_back(Stats);
 
+	/// Push back the filename as the creatures name
+	{
+		char* CreatureName = new char[30];
+		std::string Temp = FileName;
+		if (Temp.find_last_of("/") != std::string::npos)
+		{
+			Temp = Temp.substr(Temp.find_last_of("/") + 1, Temp.length());
+		}
+
+		if (Temp.find_last_of("\\") != std::string::npos)
+		{
+			Temp = Temp.substr(Temp.find_last_of("\\") + 1, Temp.length());
+		}
+
+		strcpy(CreatureName, Temp.c_str());
+		mLoadedCreatureNames.push_back(CreatureName);
+	}
+
+
 	MaterialPtr->release();
 }
 
@@ -473,4 +494,29 @@ void GenerationManager::UpdateAndDrawLoadedCreatures(mat4 ViewProjection)
 		Creature->mCreature->Update();
 		Creature->mCreature->Draw(ViewProjection);
 	}
+}
+
+void GenerationManager::SetLoadedCreaturePosition(int CreatureIndex, vec3 Position)
+{
+	/// Must be in range
+	assert(CreatureIndex >= 0 && CreatureIndex < mLoadedCreatures.size());
+
+	mLoadedCreatures[CreatureIndex]->mCreature->SetPosition(Position);
+}
+
+void GenerationManager::RemoveLoadedCreature(int CreatureIndex)
+{
+	/// Must be in range
+	assert(CreatureIndex >= 0 && CreatureIndex < mLoadedCreatures.size());
+
+	mLoadedCreatures[CreatureIndex]->mCreature->RemoveFromScene(mLoadedCreatures[CreatureIndex]->mScene);
+	delete mLoadedCreatures[CreatureIndex]->mCreature;
+	mLoadedCreatures[CreatureIndex]->mScene->removeActor(*mLoadedCreatures[CreatureIndex]->mPlaneCollision);
+	mLoadedCreatures[CreatureIndex]->mPlaneCollision->release();
+	mLoadedCreatures[CreatureIndex]->mScene->release();
+	delete mLoadedCreatures[CreatureIndex];
+	mLoadedCreatures.erase(mLoadedCreatures.begin() + CreatureIndex);
+
+	delete mLoadedCreatureNames[CreatureIndex];
+	mLoadedCreatureNames.erase(mLoadedCreatureNames.begin() + CreatureIndex);
 }

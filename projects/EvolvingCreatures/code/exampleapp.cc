@@ -324,7 +324,10 @@ ExampleApp::Run()
 	std::vector<char*> Entries;
 	FindCreatureFiles("Creatures", Entries);
 
-	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox, &Entries]()
+	char* SavedCreatureName = new char[30];
+	strcpy(SavedCreatureName, "NewCreature");
+
+	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox, &Entries, &SavedCreatureName]()
 	{
 		bool show = true;
 		// create a new window
@@ -364,11 +367,12 @@ ExampleApp::Run()
 					CreatureIndexToDraw = 0;
 			}
 
-			//static char* CreatureName = new char[30];
-			//ImGui::InputText("Creature Name", CreatureName, 30);
+			ImGui::InputText("Creature Name", SavedCreatureName, 30);
 			if (ImGui::Button("Save Creature"))
 			{
-				SaveCreatureToFile(GenMan->mSortedCreatures[CreatureIndexToDraw].first, "Creatures/Creature" + std::to_string(RandomInt(100000)) + ".creature");
+				//SaveCreatureToFile(GenMan->mSortedCreatures[CreatureIndexToDraw].first, "Creatures/Creature" + std::to_string(RandomInt(100000)) + ".creature");
+				SaveCreatureToFile(GenMan->mSortedCreatures[CreatureIndexToDraw].first, "Creatures/" + std::string(SavedCreatureName) + ".creature");
+				strcpy(SavedCreatureName, "NewCreature");
 			}
 			ImGui::Text("Drawing creature %d/%d", CreatureIndexToDraw, GenMan->mSortedCreatures.size() - 1);
 			ImGui::Text("Creature Stats");
@@ -400,6 +404,32 @@ ExampleApp::Run()
 					GenMan->LoadCreature(Entries[CurrentItem]);
 				}
 			}
+
+			if (GenMan->mLoadedCreatureNames.size() > 0)
+			{
+				static int CurrentItem = 0;
+				ImGui::Text("");
+				ImGui::Text("Loaded Creatures");
+				ImGui::ListBox(" ", &CurrentItem, GenMan->mLoadedCreatureNames.data(), GenMan->mLoadedCreatureNames.size(), 5);
+
+				if (CurrentItem >= GenMan->mLoadedCreatures.size())
+				{
+					CurrentItem = GenMan->mLoadedCreatures.size() - 1;
+				}
+
+				if (ImGui::Button("Remove"))
+				{
+					GenMan->RemoveLoadedCreature(CurrentItem);
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("Move to spawn"))
+				{
+					GenMan->SetLoadedCreaturePosition(CurrentItem, vec3(0, 20, 0));
+				}
+			}
+
 
 			ImGui::NextColumn();
 			ImGui::Text("Evolution Options");

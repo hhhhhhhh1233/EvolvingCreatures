@@ -261,6 +261,9 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 
 void Creature::SetPosition(vec3 Position)
 {
+	/// NOTE: If the creature is not part of a scene then this cannot be called, this might be a strange fix, Set position might not be a good name if it also clears forces and such anyhow
+	if (mArticulation->getScene() != NULL)
+		ClearForceAndTorque();
 	mArticulation->setRootGlobalPose(physx::PxTransform(physx::PxVec3(Position.x, Position.y, Position.z)));
 }
 
@@ -443,6 +446,47 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 	if (RandomFloat() < MutationChance)
 	{
 		NewCreature->RemoveChildlessPart();
+	}
+
+	return NewCreature;
+}
+
+Creature* Creature::GetCreatureCopy(physx::PxPhysics* Physics)
+{
+	vec3 RootScale = mRootPart->mScale;
+
+	Creature* NewCreature = new Creature(Physics, mRootPart->mPhysicsMaterial, mRootPart->mShapeFlags, mRootPart->mNode, RootScale);
+	NewCreature->mShapes.emplace(NewCreature->mRootPart, BoundingBox(vec3(), RootScale));
+
+	std::vector<CreaturePart*> PartsToLookAt = { mRootPart };
+	std::vector<CreaturePart*> CopyPartsToLookAt = { NewCreature->mRootPart };
+
+
+	while (PartsToLookAt.size() > 0)
+	{
+		CreaturePart* CurrentSelfPart = PartsToLookAt[0];
+		PartsToLookAt.erase(PartsToLookAt.begin());
+
+		CreaturePart* CurrentCopyPart = CopyPartsToLookAt[0];
+		CopyPartsToLookAt.erase(CopyPartsToLookAt.begin());
+
+		for (auto ChildPart : CurrentSelfPart->mChildren)
+		{
+			vec3 CopyScale = ChildPart->mScale;
+			vec3 CopyRelativePosition = ChildPart->mRelativePosition;
+			vec3 CopyJointPosition = ChildPart->mJointPosition;
+			float CopyMaxJointVel = ChildPart->mMaxJointVel;
+			float CopyJointOscillationSpeed = ChildPart->mJointOscillationSpeed;
+			physx::PxArticulationAxis::Enum CopyJointAxis = ChildPart->mJointAxis;
+
+			CreaturePart* NewPart = CurrentCopyPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, CopyScale, 
+																CopyRelativePosition, CopyJointPosition, CopyMaxJointVel, CopyJointOscillationSpeed, CopyJointAxis, 
+																ChildPart->mJoint->getDriveParams(ChildPart->mJointAxis));
+			NewCreature->mShapes.emplace(NewPart, BoundingBox(CopyRelativePosition, CopyScale));
+
+			PartsToLookAt.push_back(ChildPart);
+			CopyPartsToLookAt.push_back(NewPart);
+		}
 	}
 
 	return NewCreature;

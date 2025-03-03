@@ -39,6 +39,7 @@ public:
 
 	/// Mutation chance is a float from 0 to 1 that represents how likely a mutation is per randomization chance
 	Creature* GetMutatedCreature(physx::PxPhysics* Physics, float MutationChance, float MutationSeverity);
+	Creature* GetCreatureCopy(physx::PxPhysics* Physics);
 };
 
 /// TODO: Implement these features so that interesting creatures can be saved for later
