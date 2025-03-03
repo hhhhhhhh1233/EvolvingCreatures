@@ -96,10 +96,11 @@ void GenerationManager::Simulate(float StepSize)
 	}
 }
 
-void GenerationManager::UpdateCreatures()
+void GenerationManager::UpdateCreatures(float dt)
 {
 	for (auto creature : mCreatures)
 	{
+		creature->mLifetime += dt;
 		creature->mCreature->Update();
 	}
 }
@@ -131,19 +132,19 @@ void GenerationManager::SetPositionOfCreatures(vec3 Position)
 	}
 }
 
-void GenerationManager::Activate(float Vel)
+void GenerationManager::Activate()
 {
 	for (auto creature : mCreatures)
 	{
-		creature->mCreature->Activate(Vel);
+		creature->mCreature->Activate(creature->mLifetime);
 	}
 }
 
-void GenerationManager::ActivateLoadedCreatures(float Vel)
+void GenerationManager::ActivateLoadedCreatures()
 {
 	for (auto creature : mLoadedCreatures)
 	{
-		creature->mCreature->Activate(Vel);
+		creature->mCreature->Activate(creature->mLifetime);
 	}
 }
 
@@ -477,10 +478,11 @@ void GenerationManager::LoadCreature(std::string FileName)
 	MaterialPtr->release();
 }
 
-void GenerationManager::UpdateAndDrawLoadedCreatures(mat4 ViewProjection)
+void GenerationManager::UpdateAndDrawLoadedCreatures(mat4 ViewProjection, float dt)
 {
 	for (auto Creature : mLoadedCreatures)
 	{
+		Creature->mLifetime += dt;
 		Creature->mCreature->Update();
 		Creature->mCreature->Draw(ViewProjection);
 	}

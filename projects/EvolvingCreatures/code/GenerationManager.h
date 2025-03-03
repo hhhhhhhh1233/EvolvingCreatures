@@ -13,6 +13,7 @@ struct CreatureStats
 	physx::PxRigidStatic* mPlaneCollision;
 	float mAverageSpeed;
 	float mSumHorizontalSpeed;
+	float mLifetime;
 
 	CreatureStats(Creature* Crea, physx::PxScene* Scene, physx::PxRigidStatic* PlaneCollision)
 	{
@@ -22,6 +23,7 @@ struct CreatureStats
 		mPlaneCollision = PlaneCollision;
 		mAverageSpeed = 0;
 		mSumHorizontalSpeed = 0;
+		mLifetime = 0;
 	}
 };
 
@@ -73,12 +75,11 @@ public:
 	void GenerateCreatures(int GenerationSize);
 
 	void Simulate(float StepSize);
-	void UpdateCreatures();
+	void UpdateCreatures(float dt);
 	void DrawCreatures(mat4 ViewProjection);
 	void DrawFinishedCreatures(mat4 ViewProjection, int CreatureIndex);
 	void SetPositionOfCreatures(vec3 Position);
-	void Activate(float Vel);
-	void ActivateLoadedCreatures(float Vel);
+	void Activate();
 
 	void Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity);
 	void Update(float DeltaTime);
@@ -93,7 +94,8 @@ public:
 	void EvolveCreatures(float MutationChance, float MutationSeverity);
 
 	void LoadCreature(std::string FileName);
-	void UpdateAndDrawLoadedCreatures(mat4 ViewProjection);
+	void UpdateAndDrawLoadedCreatures(mat4 ViewProjection, float dt);
 	void SetLoadedCreaturePosition(int CreatureIndex, vec3 Position);
 	void RemoveLoadedCreature(int CreatureIndex);
+	void ActivateLoadedCreatures();
 };

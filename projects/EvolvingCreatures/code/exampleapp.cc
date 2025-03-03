@@ -526,12 +526,12 @@ ExampleApp::Run()
 				//NewCreature->Activate(timesincestart);
 				//MutatedCreature->Activate(timesincestart);
 				if (GenMan->mCurrentState == GenerationManagerState::Running)
-					GenMan->Activate(GenMan->mCurrentGenerationDuration);
+					GenMan->Activate();
 				else if (GenMan->mCurrentState != GenerationManagerState::Waiting)
-					GenMan->Activate(timesincestart);
+					GenMan->Activate();
 
 				if (GenMan->mCurrentState == GenerationManagerState::Nothing)
-					GenMan->ActivateLoadedCreatures(timesincestart);
+					GenMan->ActivateLoadedCreatures();
 			}
 
 			mScene->simulate(mStepSize);
@@ -542,9 +542,7 @@ ExampleApp::Run()
 			mAccumulator -= mStepSize;
 		}
 		physx::PxVec3 CreatureVel = NewCreature->mRootPart->mLink->getLinearVelocity();
-		//std::cout << CreatureVel.x << ", " << CreatureVel.y << ", " << CreatureVel.z << "\n";
 		vec3 CreatureHorizontalVel = vec3(CreatureVel.x, 0, CreatureVel.z);
-		//std::cout << "Creature Velocity: " << length(CreatureHorizontalVel) << "\n";
 
 		if (glfwGetKey(window->window, GLFW_KEY_F) == GLFW_PRESS)
 			NewCreature->mRootPart->mLink->addForce({ 0, 45, 0 });
@@ -583,7 +581,7 @@ ExampleApp::Run()
 
 		NewCreature->Update();
 		MutatedCreature->Update();
-		GenMan->UpdateCreatures();
+		GenMan->UpdateCreatures(deltaseconds);
 		
 		mat4 view = cam.GetView();
 		mat4 viewProjection = projection * view;
@@ -654,7 +652,7 @@ ExampleApp::Run()
 				GenMan->mSortedCreatures[CreatureIndexToDraw].first->DrawBoundingBoxes(viewProjection, vec3(0, 20, 0), cube);
 		}
 
-		GenMan->UpdateAndDrawLoadedCreatures(viewProjection);
+		GenMan->UpdateAndDrawLoadedCreatures(viewProjection, deltaseconds);
 
 		Quad.draw(viewProjection);
 
