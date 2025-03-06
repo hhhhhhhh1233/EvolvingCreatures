@@ -334,7 +334,7 @@ ExampleApp::Run()
 	{
 		bool show = true;
 		// create a new window
-		ImGui::Begin("Evolving Creatures Options", &show, ImGuiWindowFlags_NoSavedSettings);
+		ImGui::Begin("Evolving Creatures Options", &show);
 
 		static bool bGenerationRunning = false;
 
@@ -375,7 +375,6 @@ ExampleApp::Run()
 			ImGui::InputText("Creature Name", SavedCreatureName, 30);
 			if (ImGui::Button("Save Creature"))
 			{
-				//SaveCreatureToFile(GenMan->mSortedCreatures[CreatureIndexToDraw].first, "Creatures/Creature" + std::to_string(RandomInt(100000)) + ".creature");
 				SaveCreatureToFile(GenMan->mSortedCreatures[CreatureIndexToDraw].first, "Creatures/" + std::string(SavedCreatureName) + ".creature");
 				strcpy(SavedCreatureName, "NewCreature");
 			}
@@ -640,27 +639,6 @@ ExampleApp::Run()
 		/// ----------------------------------------
 
 		sphere.draw(viewProjection);
-
-		//NewCreature->Draw(viewProjection);
-
-		//TestAccumulator += deltaseconds;
-		//if (TestAccumulator > TestBoxUpdateTime)
-		//{
-		//	TestAccumulator -= TestBoxUpdateTime;
-		//	std::pair<BoundingBox, CreaturePart*> Temp  = NewCreature->GetRandomShape();
-		//	TestBox = Temp.first;
-		//	ParentToTestBox = Temp.second;
-		//}
-		//if (NewCreature->IsColliding(TestBox, ParentToTestBox))
-		//{
-		//	artCube.transform = translate(vec3(0, 20, 0) + TestBox.GetPosition()) * scale(TestBox.GetScale());
-		//	artCube.draw(viewProjection);
-		//}
-		//else
-		//{
-		//	cube.transform = translate(vec3(0, 20, 0) + TestBox.GetPosition()) * scale(TestBox.GetScale());
-		//	cube.draw(viewProjection);
-		//}
 
 		//NewCreature->Draw(viewProjection);
 		//MutatedCreature->Draw(viewProjection);
