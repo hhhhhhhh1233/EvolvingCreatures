@@ -283,12 +283,12 @@ ExampleApp::Run()
 
 	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
 	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
+	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
 
 	//NewCreature->EnableGravity(false);
 
@@ -301,8 +301,9 @@ ExampleApp::Run()
 	NewCreature->AddToScene(mScene);
 
 	Creature* MutatedCreature = NewCreature->GetMutatedCreature(Physics, 1.5, 0.5);
+	//Creature* MutatedCreature = NewCreature->GetCreatureCopy(Physics);
 	MutatedCreature->SetPosition(vec3(5, 10, 0));
-	//MutatedCreature->AddToScene(mScene);
+	MutatedCreature->AddToScene(mScene);
 
 	/// ------------------------------------------
 	/// [END] CREATE ACTORS
@@ -321,13 +322,15 @@ ExampleApp::Run()
 	int CreatureIndexToDraw = 0;
 	bool bDrawBoundingBox = false;
 
+	float SimulationSpeed = 1;
+
 	std::vector<char*> Entries;
 	FindCreatureFiles("Creatures", Entries);
 
 	char* SavedCreatureName = new char[30];
 	strcpy(SavedCreatureName, "NewCreature");
 
-	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox, &Entries, &SavedCreatureName]()
+	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox, &Entries, &SavedCreatureName, &SimulationSpeed]()
 	{
 		bool show = true;
 		// create a new window
@@ -346,6 +349,8 @@ ExampleApp::Run()
 		/// Debug Feature
 		char* StateNames[] = { {"Nothing"} , {"Running"}, {"Finished"}, {"Waiting"}};
 		ImGui::Text("Current state: %s", StateNames[GenMan->mCurrentState]);
+
+		ImGui::DragFloat("Simulation Speed", &SimulationSpeed, 0.5, 0, 10, "%.2f");
 
 		if (GenMan->mCurrentState == GenerationManagerState::Finished)
 		{
@@ -417,10 +422,7 @@ ExampleApp::Run()
 					CurrentItem = GenMan->mLoadedCreatures.size() - 1;
 				}
 
-				if (ImGui::Button("Remove"))
-				{
-					GenMan->RemoveLoadedCreature(CurrentItem);
-				}
+				bool bToRemove = ImGui::Button("Remove");
 
 				ImGui::SameLine();
 
@@ -428,11 +430,29 @@ ExampleApp::Run()
 				{
 					GenMan->SetLoadedCreaturePosition(CurrentItem, vec3(0, 20, 0));
 				}
+
+				ImGui::SameLine();
+
+				ImGui::Checkbox("Active", &GenMan->mLoadedCreatures[CurrentItem]->bActive);
+
+				ImGui::SameLine();
+
+				ImGui::Checkbox("Draw Bounding Boxes", &GenMan->mLoadedCreatures[CurrentItem]->bDrawBoundingBox);
+
+				if (bToRemove)
+				{
+					GenMan->RemoveLoadedCreature(CurrentItem);
+				}
 			}
 
 
 			ImGui::NextColumn();
+
 			ImGui::Text("Evolution Options");
+
+			static bool bUseLoadedCreatures;
+			ImGui::Checkbox("Use loaded creatures in population", &bUseLoadedCreatures);
+
 			ImGui::DragInt("How many creatures", &NumberOfCreatures, 1, 5, 500);
 			ImGui::DragInt("How many to keep per gen", &GenerationSurvivors, 1, 5, NumberOfCreatures);
 			if (GenerationSurvivors > NumberOfCreatures)
@@ -441,18 +461,19 @@ ExampleApp::Run()
 			ImGui::DragFloat("Mutation Severity", &MutationSeverity, 0.05, 0, 1, "%.2f");
 
 			ImGui::Text("Generation Management");
-			ImGui::DragInt("Number of Generations", &NumberOfGenerations, 1, 1, 50);
+			ImGui::DragInt("Number of Generations", &NumberOfGenerations, 1, 1, 200);
 			ImGui::DragFloat("Evaluation Duration", &EvaluationTime, 1, 0, 120);
 
 			if (ImGui::Button("Start"))
 			{
-				GenMan->Start(NumberOfGenerations, EvaluationTime, GenerationSurvivors, MutationChance, MutationSeverity);
-				GenMan->GenerateCreatures(NumberOfCreatures);
+				GenMan->Start(NumberOfGenerations, EvaluationTime, GenerationSurvivors, MutationChance, MutationSeverity, NumberOfCreatures, bUseLoadedCreatures);
+				//GenMan->GenerateCreatures(NumberOfCreatures);
 			}
 			ImGui::Columns(1);
 		}
 		else
 		{
+			ImGui::Columns(2);
 			ImGui::Text("Statistics");
 
 			ImGui::Text("Number of creatures: %d", NumberOfCreatures);
@@ -460,12 +481,14 @@ ExampleApp::Run()
 			ImGui::Text("Mutation Chance: %.1f%%", MutationChance * 100);
 			ImGui::Text("Mutation Severity: %.1f%%", MutationSeverity * 100);
 
-			ImGui::Text("\nOn Generation: %d/%d", GenMan->mCurrentGeneration, GenMan->mNumberOfGenerations);
+			ImGui::NextColumn();
+			ImGui::Text("On Generation: %d/%d", GenMan->mCurrentGeneration, GenMan->mNumberOfGenerations);
 			ImGui::Text("Been running for: %.2f/%.2f", GenMan->mCurrentGenerationDuration, GenMan->mGenerationDurationSeconds);
 
 			float CurrentProgress = (((GenMan->mCurrentGeneration * GenMan->mGenerationDurationSeconds) + GenMan->mCurrentGenerationDuration) / (GenMan->mNumberOfGenerations * GenMan->mGenerationDurationSeconds));
 
 			ImGui::Text("Progress: %.2f%%", CurrentProgress * 100);
+			ImGui::Columns(1);
 		}
 
 
@@ -534,10 +557,10 @@ ExampleApp::Run()
 					GenMan->ActivateLoadedCreatures();
 			}
 
-			mScene->simulate(mStepSize);
+			mScene->simulate(SimulationSpeed * mStepSize);
 			mScene->fetchResults(true);
 
-			GenMan->Simulate(mStepSize);
+			GenMan->Simulate(SimulationSpeed * mStepSize);
 
 			mAccumulator -= mStepSize;
 		}
@@ -639,8 +662,10 @@ ExampleApp::Run()
 		//	cube.draw(viewProjection);
 		//}
 
+		//NewCreature->Draw(viewProjection);
 		//MutatedCreature->Draw(viewProjection);
 		//NewCreature->DrawBoundingBoxes(viewProjection, vec3(0, 20, 0), cube);
+		//MutatedCreature->DrawBoundingBoxes(viewProjection, vec3(10, 20, 0), artCube);
 		if (GenMan->mCurrentState == GenerationManagerState::Running || GenMan->mCurrentState == GenerationManagerState::Waiting)
 		{
 			GenMan->DrawCreatures(viewProjection);
@@ -653,6 +678,11 @@ ExampleApp::Run()
 		}
 
 		GenMan->UpdateAndDrawLoadedCreatures(viewProjection, deltaseconds);
+		for (auto Thing : GenMan->mLoadedCreatures)
+		{
+			if (Thing->bDrawBoundingBox)
+				Thing->mCreature->DrawBoundingBoxes(viewProjection, vec3(0, 20, 0), cube);
+		}
 
 		Quad.draw(viewProjection);
 

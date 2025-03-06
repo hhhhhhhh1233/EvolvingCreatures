@@ -5,7 +5,7 @@
 #include <PxPhysicsAPI.h>
 #include "render/GraphicsNode.h"
 
-struct CreatureStats
+struct CreatureBundle
 {
 	Creature* mCreature;
 	float mFitness;
@@ -14,8 +14,10 @@ struct CreatureStats
 	float mAverageSpeed;
 	float mSumHorizontalSpeed;
 	float mLifetime;
+	bool bActive = true;
+	bool bDrawBoundingBox = false;
 
-	CreatureStats(Creature* Crea, physx::PxScene* Scene, physx::PxRigidStatic* PlaneCollision)
+	CreatureBundle(Creature* Crea, physx::PxScene* Scene, physx::PxRigidStatic* PlaneCollision)
 	{
 		mCreature = Crea;
 		mFitness = 0;
@@ -25,6 +27,16 @@ struct CreatureStats
 		mSumHorizontalSpeed = 0;
 		mLifetime = 0;
 	}
+
+	~CreatureBundle()
+	{
+		mCreature->RemoveFromScene(mScene);
+		delete mCreature;
+		mScene->removeActor(*mPlaneCollision);
+		mPlaneCollision->release();
+		mScene->release();
+	}
+
 };
 
 enum GenerationManagerState {
@@ -40,7 +52,7 @@ public:
 
 /// FIELDS
 	unsigned int mGenerationSize = 50;
-	std::vector<CreatureStats*> mCreatures;
+	std::vector<CreatureBundle*> mCreatures;
 	physx::PxPhysics* mPhysics;
 	physx::PxDefaultCpuDispatcher* mDispatcher = NULL;
 
@@ -65,14 +77,14 @@ public:
 	std::vector<std::pair<Creature*, float>> mSortedCreatures;
 
 	/// These are not part of the generations, they are loaded in from file by the user
-	std::vector<CreatureStats*> mLoadedCreatures;
+	std::vector<CreatureBundle*> mLoadedCreatures;
 	std::vector<char*> mLoadedCreatureNames;
 
 /// METHODS
 	GenerationManager(physx::PxPhysics* Physics, physx::PxDefaultCpuDispatcher* Dispatcher, GraphicsNode CubeNode);
 
 	/// This will populate the vector above with creatures and scenes with a plane, with mGenerationSize amount of creatures
-	void GenerateCreatures(int GenerationSize);
+	void GenerateCreatures(int GenerationSize, bool bUseLoadedCreatures);
 
 	void Simulate(float StepSize);
 	void UpdateCreatures(float dt);
@@ -81,17 +93,14 @@ public:
 	void SetPositionOfCreatures(vec3 Position);
 	void Activate();
 
-	void Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity);
+	void Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity, int GenerationSize, bool bUseLoadedCreatures);
 	void Update(float DeltaTime);
 
 	void StartEvalutation();
 	void EndEvaluation();
 
-	/// Remove creatures that don't have enough
-	void CullGeneration(int NumberToKeep);
-
-	/// Mutate the creatures based on the ones that were fit to fill up the mCreatures vector to the set generation size
-	void EvolveCreatures(float MutationChance, float MutationSeverity);
+	/// This is the fundamental method of this class, that will
+	void CullAndMutateGeneration(int NumberToKeep, float MutationChance, float MutationSeverity);
 
 	void LoadCreature(std::string FileName);
 	void UpdateAndDrawLoadedCreatures(mat4 ViewProjection, float dt);

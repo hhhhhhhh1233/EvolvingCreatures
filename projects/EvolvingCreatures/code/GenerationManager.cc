@@ -6,25 +6,71 @@ GenerationManager::GenerationManager(physx::PxPhysics* Physics, physx::PxDefault
 	/// Intentionally left blank
 }
 
-void GenerationManager::GenerateCreatures(int GenerationSize)
+void GenerationManager::GenerateCreatures(int GenerationSize, bool bUseLoadedCreatures)
 {
 	/// Destroys any creatures that exist in the list already
 	for (int i = 0; i < mCreatures.size(); i++)
 	{
-		mCreatures[i]->mCreature->RemoveFromScene(mCreatures[i]->mScene);
-		delete mCreatures[i]->mCreature;
-		mCreatures[i]->mPlaneCollision->release();
-		mCreatures[i]->mScene->release();
 		delete mCreatures[i];
 	}
 	mCreatures.erase(mCreatures.begin(), mCreatures.end());
 
 	mGenerationSize = GenerationSize;
 	physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
-	for (int i = 0; i < mGenerationSize; i++)
-	{
-		physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
+	physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
 
+	if (bUseLoadedCreatures)
+	{
+		for (auto LoadedBundle : mLoadedCreatures)
+		{
+			Creature* NewCreature = LoadedBundle->mCreature->GetCreatureCopy(mPhysics);
+			NewCreature->SetPosition(vec3(0, 20, 0));
+
+			/// ----------------------------------------
+			/// [BEGIN] CREATURE PERSONAL SCENE SETUP
+			/// ----------------------------------------
+
+			physx::PxTolerancesScale ToleranceScale;
+
+			ToleranceScale.length = 1;
+			ToleranceScale.speed = 981;
+
+			physx::PxSceneDesc SceneDesc(ToleranceScale);
+			SceneDesc.gravity = { 0, -9.8, 0 };
+			SceneDesc.cpuDispatcher = mDispatcher;
+			SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+			SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+			SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+
+			physx::PxScene* Scene = mPhysics->createScene(SceneDesc);
+			Scene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
+
+			physx::PxRigidStatic* PlaneCollision = mPhysics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
+			{
+				physx::PxShape* shape = mPhysics->createShape(physx::PxPlaneGeometry(), &MaterialPtr, 1, true, ShapeFlags);
+				PlaneCollision->attachShape(*shape);
+				shape->release();
+			}
+
+			Scene->addActor(*PlaneCollision);
+
+			/// ----------------------------------------
+			/// [END] CREATURE PERSONAL SCENE SETUP
+			/// ----------------------------------------
+
+			NewCreature->AddToScene(Scene);
+				
+			CreatureBundle* NewCreatureStats = new CreatureBundle(NewCreature, Scene, PlaneCollision);
+			mCreatures.push_back(NewCreatureStats);
+
+			/// If someone theoretically loaded in more creatures then the generation allows only copy the amount that will fill the generation
+			if (mCreatures.size() >= mGenerationSize)
+				break;
+		}
+	}
+
+	for (int i = mCreatures.size(); i < mGenerationSize; i++)
+	{
 		Creature* reature = new Creature(mPhysics, MaterialPtr, ShapeFlags, mCubeNode, vec3(RandomFloatInRange(0.5, 3), RandomFloatInRange(0.5, 3), RandomFloatInRange(0.5, 3)));
 
 		int NumberOfBodyParts = RandomIntInRange(1, 4);
@@ -67,7 +113,7 @@ void GenerationManager::GenerateCreatures(int GenerationSize)
 
 		reature->AddToScene(Scene);
 			
-		CreatureStats* NewCreature = new CreatureStats(reature, Scene, PlaneCollision);
+		CreatureBundle* NewCreature = new CreatureBundle(reature, Scene, PlaneCollision);
 		mCreatures.push_back(NewCreature);
 	}
 
@@ -76,40 +122,40 @@ void GenerationManager::GenerateCreatures(int GenerationSize)
 
 void GenerationManager::Simulate(float StepSize)
 {
-	for (auto creature : mCreatures)
+	for (auto Bundle : mCreatures)
 	{
-		creature->mScene->simulate(StepSize);
-		creature->mScene->fetchResults(true);
+		Bundle->mScene->simulate(StepSize);
+		Bundle->mScene->fetchResults(true);
 
 		if (mCurrentState == GenerationManagerState::Running)
 		{
-			physx::PxVec3 Vel = creature->mCreature->mRootPart->mLink->getLinearVelocity();
+			physx::PxVec3 Vel = Bundle->mCreature->mRootPart->mLink->getLinearVelocity();
 			physx::PxVec3 HorizontalVel = { Vel.x, 0, Vel.z };
-			creature->mSumHorizontalSpeed += HorizontalVel.magnitude();
+			Bundle->mSumHorizontalSpeed += HorizontalVel.magnitude();
 		}
 	}
 
-	for (auto creature : mLoadedCreatures)
+	for (auto Bundle : mLoadedCreatures)
 	{
-		creature->mScene->simulate(StepSize);
-		creature->mScene->fetchResults(true);
+		Bundle->mScene->simulate(StepSize);
+		Bundle->mScene->fetchResults(true);
 	}
 }
 
 void GenerationManager::UpdateCreatures(float dt)
 {
-	for (auto creature : mCreatures)
+	for (auto Bundle : mCreatures)
 	{
-		creature->mLifetime += dt;
-		creature->mCreature->Update();
+		Bundle->mLifetime += dt;
+		Bundle->mCreature->Update();
 	}
 }
 
 void GenerationManager::DrawCreatures(mat4 ViewProjection)
 {
-	for (auto creature : mCreatures)
+	for (auto Bundle : mCreatures)
 	{
-		creature->mCreature->Draw(ViewProjection);
+		Bundle->mCreature->Draw(ViewProjection);
 	}
 }
 
@@ -123,34 +169,28 @@ void GenerationManager::DrawFinishedCreatures(mat4 ViewProjection, int CreatureI
 
 void GenerationManager::SetPositionOfCreatures(vec3 Position)
 {
-	for (auto creature : mCreatures)
+	for (auto Bundle : mCreatures)
 	{
 		//creature->mCreature->RemoveFromScene(creature->mScene);
-		creature->mCreature->SetPosition(Position);
+		Bundle->mCreature->SetPosition(Position);
 		//creature->mCreature->AddToScene(creature->mScene);
-		creature->mCreature->ClearForceAndTorque();
+		Bundle->mCreature->ClearForceAndTorque();
 	}
 }
 
 void GenerationManager::Activate()
 {
-	for (auto creature : mCreatures)
+	for (auto Bundle : mCreatures)
 	{
-		creature->mCreature->Activate(creature->mLifetime);
+		Bundle->mCreature->Activate(Bundle->mLifetime);
 	}
 }
 
-void GenerationManager::ActivateLoadedCreatures()
-{
-	for (auto creature : mLoadedCreatures)
-	{
-		creature->mCreature->Activate(creature->mLifetime);
-	}
-}
-
-void GenerationManager::Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity)
+void GenerationManager::Start(int NumberOfGenerations, float GenTime, int GenerationSurvivors, float MutationChance, float MutationSeverity, int GenerationSize, bool bUseLoadedCreatures)
 {
 	mCurrentState = GenerationManagerState::Running;
+
+	GenerateCreatures(GenerationSize, bUseLoadedCreatures);
 
 	/// Clear out all loaded creatures
 	while (mLoadedCreatures.size() > 0)
@@ -185,6 +225,24 @@ static bool IsSorted(const std::vector<std::pair<Creature*, float>>& Arr)
 	return true;
 }
 
+/// Utility for checking if the creatures are sorted yet by their fitness, only used by cull generation and when a generation finishes so we can render the best ones
+static void Sort(std::vector<std::pair<Creature*, float>>& Arr)
+{
+	/// Sort the creatures based on their fitness
+	while (!IsSorted(Arr))
+	{
+		for (int i = 0; i < Arr.size(); i++)
+		{
+			int j = i;
+			while (j < Arr.size() - 1 && Arr[j].second < Arr[j + 1].second)
+				j++;
+			std::pair<Creature*, float> Temp = Arr[j];
+			Arr[j] = Arr[i];
+			Arr[i] = Temp;
+		}
+	}
+}
+
 void GenerationManager::Update(float DeltaTime)
 {
 	if (mCurrentState == GenerationManagerState::Running)
@@ -197,11 +255,9 @@ void GenerationManager::Update(float DeltaTime)
 
 			EndEvaluation();
 
-			CullGeneration(mGenerationSurvivors);
-
 			if (!(mCurrentGeneration >= mNumberOfGenerations))
 			{
-				EvolveCreatures(mMutationChance, mMutationSeverity);
+				CullAndMutateGeneration(mGenerationSurvivors, mMutationChance, mMutationSeverity);
 				StartEvalutation();
 			}
 
@@ -211,24 +267,13 @@ void GenerationManager::Update(float DeltaTime)
 			{
 				mCurrentState = GenerationManagerState::Finished;
 
-				for (auto creature : mCreatures)
+				for (auto Bundle : mCreatures)
 				{
-					mSortedCreatures.push_back({ creature->mCreature, creature->mFitness });
+					mSortedCreatures.push_back({ Bundle->mCreature, Bundle->mFitness });
 				}
 
 				/// Sort the creatures based on their fitness
-				while (!IsSorted(mSortedCreatures))
-				{
-					for (int i = 0; i < mSortedCreatures.size(); i++)
-					{
-						int j = i;
-						while (j < mSortedCreatures.size() - 1 && mSortedCreatures[j].second < mSortedCreatures[j + 1].second)
-							j++;
-						std::pair<Creature*, float> Temp = mSortedCreatures[j];
-						mSortedCreatures[j] = mSortedCreatures[i];
-						mSortedCreatures[i] = Temp;
-					}
-				}
+				Sort(mSortedCreatures);
 			}
 		}
 	}
@@ -236,9 +281,9 @@ void GenerationManager::Update(float DeltaTime)
 
 void GenerationManager::StartEvalutation()
 {
-	for (auto creature : mCreatures)
+	for (auto Bundle : mCreatures)
 	{
-		creature->mSumHorizontalSpeed = 0;
+		Bundle->mSumHorizontalSpeed = 0;
 	}
 
 	mEvaluationStartTime = std::chrono::high_resolution_clock::now();
@@ -248,43 +293,28 @@ void GenerationManager::EndEvaluation()
 {
 	mEvaluationDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - mEvaluationStartTime).count() / 1000.f;
 
-	for (auto creature : mCreatures)
+	for (auto Bundle : mCreatures)
 	{
-		creature->mAverageSpeed = creature->mSumHorizontalSpeed / mEvaluationDuration;
+		Bundle->mAverageSpeed = Bundle->mSumHorizontalSpeed / mEvaluationDuration;
 
 		/// This is to only consider horizontal movement interesting in fitness calculation
-		physx::PxVec3 Pos = creature->mCreature->mRootPart->mLink->getGlobalPose().p;
+		physx::PxVec3 Pos = Bundle->mCreature->mRootPart->mLink->getGlobalPose().p;
 		Pos = { Pos.x, 0, Pos.z };
-		creature->mFitness = Pos.magnitude();
+		Bundle->mFitness = Pos.magnitude();
 	}
 }
 
-void GenerationManager::CullGeneration(int NumberToKeep)
+void GenerationManager::CullAndMutateGeneration(int NumberToKeep, float MutationChance, float MutationSeverity)
 {
 	std::vector<std::pair<Creature*, float>> SortedCreatures;
 
-	for (auto creature : mCreatures)
+	for (auto Bundle : mCreatures)
 	{
-		SortedCreatures.push_back({ creature->mCreature, creature->mFitness });
-		creature->mCreature->RemoveFromScene(creature->mScene);
-		creature->mScene->removeActor(*creature->mPlaneCollision);
-		creature->mPlaneCollision->release();
-		creature->mScene->release();
+		SortedCreatures.push_back({ Bundle->mCreature->GetCreatureCopy(mPhysics), Bundle->mFitness });
 	}
 
 	/// Sort the creatures based on their fitness
-	while (!IsSorted(SortedCreatures))
-	{
-		for (int i = 0; i < SortedCreatures.size(); i++)
-		{
-			int j = i;
-			while (j < SortedCreatures.size() - 1 && SortedCreatures[j].second < SortedCreatures[j + 1].second)
-				j++;
-			std::pair<Creature*, float> Temp = SortedCreatures[j];
-			SortedCreatures[j] = SortedCreatures[i];
-			SortedCreatures[i] = Temp;
-		}
-	}
+	Sort(SortedCreatures);
 
 	/// Clear the creatures that are not up to snuff
 	for (int i = NumberToKeep; i < SortedCreatures.size(); i++)
@@ -293,7 +323,7 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 	}
 	SortedCreatures.erase(SortedCreatures.begin() + NumberToKeep, SortedCreatures.end());
 
-	/// Delete the all of the CreatureStats
+	/// Delete the all of the CreatureBundle
 	for (int i = 0; i < mCreatures.size(); i++)
 	{
 		delete mCreatures[i];
@@ -304,9 +334,8 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 	physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
 
 	/// Refill the mCreatures array with creatures based on mutations from the fittest
-	for (int i = 0; i < SortedCreatures.size(); i++)
+	for (int i = 0; i < mGenerationSize; i++)
 	{
-
 		/// ----------------------------------------
 		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
@@ -338,72 +367,12 @@ void GenerationManager::CullGeneration(int NumberToKeep)
 		/// ----------------------------------------
 		/// [END] CREATURE PERSONAL SCENE SETUP
 		/// ----------------------------------------
-		Creature* CopyOfTheGoat = SortedCreatures[i].first->GetCreatureCopy(mPhysics);
-		//SortedCreatures[i].first->AddToScene(Scene);
-		CopyOfTheGoat->AddToScene(Scene);
+		Creature* MutatedCreature = SortedCreatures[i % SortedCreatures.size()].first->GetMutatedCreature(mPhysics, MutationChance, MutationSeverity);
+		MutatedCreature->AddToScene(Scene);
 
-		//CreatureStats* a = new CreatureStats(SortedCreatures[i].first, Scene, PlaneCollision);
-		CreatureStats* a = new CreatureStats(CopyOfTheGoat, Scene, PlaneCollision);
-		a->mFitness = SortedCreatures[i].second;
+		CreatureBundle* a = new CreatureBundle(MutatedCreature, Scene, PlaneCollision);
 
 		mCreatures.push_back(a);
-	}
-
-	MaterialPtr->release();
-}
-
-void GenerationManager::EvolveCreatures(float MutationChance, float MutationSeverity)
-{
-	physx::PxShapeFlags ShapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
-	physx::PxMaterial* MaterialPtr = mPhysics->createMaterial(0.5f, 0.5f, 0.1f);
-
-	int NumberOfCreaturesToEvolve = mCreatures.size();
-
-	int i = 0;
-	while (mCreatures.size() < mGenerationSize)
-	{
-		Creature* Creat = mCreatures[i]->mCreature->GetMutatedCreature(mPhysics, MutationChance, MutationSeverity);
-		Creat->SetPosition(vec3(0, 20, 0));
-
-		/// ----------------------------------------
-		/// [BEGIN] CREATURE PERSONAL SCENE SETUP
-		/// ----------------------------------------
-
-		physx::PxTolerancesScale ToleranceScale;
-
-		ToleranceScale.length = 1;
-		ToleranceScale.speed = 981;
-
-		physx::PxSceneDesc SceneDesc(ToleranceScale);
-		SceneDesc.gravity = { 0, -9.8, 0 };
-		SceneDesc.cpuDispatcher = mDispatcher;
-		SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
-		SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-		SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-
-		physx::PxScene* Scene = mPhysics->createScene(SceneDesc);
-		Scene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
-
-		physx::PxRigidStatic* PlaneCollision = mPhysics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
-		{
-			physx::PxShape* shape = mPhysics->createShape(physx::PxPlaneGeometry(), &MaterialPtr, 1, true, ShapeFlags);
-			PlaneCollision->attachShape(*shape);
-			shape->release();
-		}
-
-		Scene->addActor(*PlaneCollision);
-
-		/// ----------------------------------------
-		/// [END] CREATURE PERSONAL SCENE SETUP
-		/// ----------------------------------------
-
-		CreatureStats* a = new CreatureStats(Creat, Scene, PlaneCollision);
-
-		Creat->AddToScene(Scene);
-
-		mCreatures.push_back(a);
-
-		i = (i + 1) % NumberOfCreaturesToEvolve;
 	}
 
 	MaterialPtr->release();
@@ -448,7 +417,7 @@ void GenerationManager::LoadCreature(std::string FileName)
 	/// [END] CREATURE PERSONAL SCENE SETUP
 	/// ----------------------------------------
 
-	CreatureStats* Stats = new CreatureStats(LoadedCreature, Scene, PlaneCollision);
+	CreatureBundle* Stats = new CreatureBundle(LoadedCreature, Scene, PlaneCollision);
 
 	LoadedCreature->AddToScene(Scene);
 
@@ -480,11 +449,20 @@ void GenerationManager::LoadCreature(std::string FileName)
 
 void GenerationManager::UpdateAndDrawLoadedCreatures(mat4 ViewProjection, float dt)
 {
-	for (auto Creature : mLoadedCreatures)
+	for (auto Bundle : mLoadedCreatures)
 	{
-		Creature->mLifetime += dt;
-		Creature->mCreature->Update();
-		Creature->mCreature->Draw(ViewProjection);
+		Bundle->mLifetime += dt;
+		Bundle->mCreature->Update();
+		Bundle->mCreature->Draw(ViewProjection);
+	}
+}
+
+void GenerationManager::ActivateLoadedCreatures()
+{
+	for (auto Bundle : mLoadedCreatures)
+	{
+		if (Bundle->bActive)
+			Bundle->mCreature->Activate(Bundle->mLifetime);
 	}
 }
 
@@ -501,11 +479,11 @@ void GenerationManager::RemoveLoadedCreature(int CreatureIndex)
 	/// Must be in range
 	assert(CreatureIndex >= 0 && CreatureIndex < mLoadedCreatures.size());
 
-	mLoadedCreatures[CreatureIndex]->mCreature->RemoveFromScene(mLoadedCreatures[CreatureIndex]->mScene);
-	delete mLoadedCreatures[CreatureIndex]->mCreature;
-	mLoadedCreatures[CreatureIndex]->mScene->removeActor(*mLoadedCreatures[CreatureIndex]->mPlaneCollision);
-	mLoadedCreatures[CreatureIndex]->mPlaneCollision->release();
-	mLoadedCreatures[CreatureIndex]->mScene->release();
+	//mLoadedCreatures[CreatureIndex]->mCreature->RemoveFromScene(mLoadedCreatures[CreatureIndex]->mScene);
+	//delete mLoadedCreatures[CreatureIndex]->mCreature;
+	//mLoadedCreatures[CreatureIndex]->mScene->removeActor(*mLoadedCreatures[CreatureIndex]->mPlaneCollision);
+	//mLoadedCreatures[CreatureIndex]->mPlaneCollision->release();
+	//mLoadedCreatures[CreatureIndex]->mScene->release();
 	delete mLoadedCreatures[CreatureIndex];
 	mLoadedCreatures.erase(mLoadedCreatures.begin() + CreatureIndex);
 
