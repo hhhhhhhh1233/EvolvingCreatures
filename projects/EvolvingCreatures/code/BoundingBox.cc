@@ -62,6 +62,50 @@ bool BoundingBox::IsColliding(BoundingBox Other)
 	return true;
 }
 
+bool BoundingBox::PointIsInShape(vec3 Point) const
+{
+	return (Min.x <= Point.x && Point.x <= Max.x) 
+		&& (Min.y <= Point.y && Point.y <= Max.y) 
+		&& (Min.z <= Point.z && Point.z <= Max.z);
+}
+
+vec3 BoundingBox::CalcDistanceToPoint(vec3 Point)
+{
+	vec3 Distance;
+
+	/// Figure out x first
+	if (Point.x <= Min.x)
+		Distance.x = Min.x - Point.x;
+	else if (Point.x >= Max.x)
+		Distance.x = Max.x - Point.x;
+	else
+		Distance.x = 0;
+
+	/// Then figure out y
+	if (Point.y <= Min.y)
+		Distance.y = Min.y - Point.y;
+	else if (Point.y >= Max.y)
+		Distance.y = Max.y - Point.y;
+	else
+		Distance.y = 0;
+
+	/// Lastly z
+	if (Point.z <= Min.z)
+		Distance.z = Min.z - Point.z;
+	else if (Point.z >= Max.z)
+		Distance.z = Max.z - Point.z;
+	else
+		Distance.z = 0;
+
+	return Distance;
+}
+
+void BoundingBox::Move(vec3 Diff)
+{
+	Min += Diff;
+	Max += Diff;
+}
+
 vec3 BoundingBox::GetPosition() const
 {
 	return Min + ((Max - Min) * 0.5);
