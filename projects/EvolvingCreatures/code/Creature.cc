@@ -48,7 +48,7 @@ void Creature::RemoveChildlessPart()
 
 	if (Parent == nullptr)
 	{
-		assert(false, "NO PART TO DELETE");
+		std::cout << "NOTE: Invoked Creature::RemoveChildlessPart() on a creature with no children\n";
 		return;
 	}
 
@@ -255,7 +255,14 @@ void Creature::AddRandomPart(physx::PxPhysics* Physics, physx::PxMaterial* Physi
 	posDrive.maxForce = RandomInt(10);
 	posDrive.driveType = physx::PxArticulationDriveType::eACCELERATION;
 
-	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, RandomPointOnParent, MaxJointVel, JointOscillationSpeed, JointAxis, posDrive);
+	physx::PxArticulationMotion::Enum JointMotion = (physx::PxArticulationMotion::Enum)RandomInt(3);
+
+	physx::PxArticulationLimit JointLimit;
+	JointLimit.low = -RandomFloat(3.14);
+	JointLimit.high = RandomFloat(3.14);
+
+	CreaturePart* NewPart = ParentPart->AddChild(Physics, mArticulation, PhysicsMaterial, ShapeFlags, Node, RandomScale, RandomRelativePosition, RandomPointOnParent, 
+										MaxJointVel, JointOscillationSpeed, JointAxis, posDrive, JointMotion, JointLimit);
 	mShapes.emplace(NewPart, BoundingBox(mShapes[ParentPart].GetPosition() + RandomRelativePosition, RandomScale));
 }
 
@@ -365,6 +372,8 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 			float MutatedJointOscillationSpeed = ChildPart->mJointOscillationSpeed;
 			physx::PxArticulationAxis::Enum MutatedJointAxis = ChildPart->mJointAxis;
 
+			BoundingBox PartBoundingBox = mShapes[ChildPart];
+
 			/// Randomize scale
 			if (RandomFloat() < MutationChance)
 			{
@@ -428,8 +437,10 @@ Creature* Creature::GetMutatedCreature(physx::PxPhysics* Physics, float Mutation
 
 			CreaturePart* NewPart = CurrentMutatedPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, MutatedScale, 
 																MutatedRelativePosition, MutatedJointPosition, MutatedMaxJointVel, MutatedJointOscillationSpeed, MutatedJointAxis, 
-																ChildPart->mJoint->getDriveParams(ChildPart->mJointAxis));
-			NewCreature->mShapes.emplace(NewPart, BoundingBox(MutatedRelativePosition, MutatedScale));
+																ChildPart->mJoint->getDriveParams(ChildPart->mJointAxis), ChildPart->mJoint->getMotion(ChildPart->mJointAxis), ChildPart->mJoint->getLimitParams(ChildPart->mJointAxis));
+			/// Calculate where it ought to be based on the parent part and how the shape has shifted
+			NewCreature->mShapes.emplace(NewPart, BoundingBox(NewCreature->mShapes[CurrentMutatedPart].GetPosition() + MutatedRelativePosition, MutatedScale));
+			//NewCreature->mShapes.emplace(NewPart, PartBoundingBox);
 
 			PartsToLookAt.push_back(ChildPart);
 			MutatedPartsToLookAt.push_back(NewPart);
@@ -481,8 +492,8 @@ Creature* Creature::GetCreatureCopy(physx::PxPhysics* Physics)
 
 			CreaturePart* NewPart = CurrentCopyPart->AddChild(Physics, NewCreature->mArticulation, ChildPart->mPhysicsMaterial, ChildPart->mShapeFlags, ChildPart->mNode, CopyScale, 
 																CopyRelativePosition, CopyJointPosition, CopyMaxJointVel, CopyJointOscillationSpeed, CopyJointAxis, 
-																ChildPart->mJoint->getDriveParams(ChildPart->mJointAxis));
-			NewCreature->mShapes.emplace(NewPart, BoundingBox(CopyRelativePosition, CopyScale));
+																ChildPart->mJoint->getDriveParams(ChildPart->mJointAxis), ChildPart->mJoint->getMotion(ChildPart->mJointAxis), ChildPart->mJoint->getLimitParams(ChildPart->mJointAxis));
+			NewCreature->mShapes.emplace(NewPart, BoundingBox(mShapes[ChildPart].GetPosition(), CopyScale));
 
 			PartsToLookAt.push_back(ChildPart);
 			CopyPartsToLookAt.push_back(NewPart);
@@ -542,11 +553,16 @@ Creature* LoadCreatureFromFile(std::string FileName, physx::PxPhysics* Physics, 
 			posDrive.maxForce = CurrentPart->children()->Get(i)->joint_drive_max_force();
 			posDrive.driveType = physx::PxArticulationDriveType::eACCELERATION;
 
+			physx::PxArticulationMotion::Enum JointMotion = (physx::PxArticulationMotion::Enum)CurrentPart->children()->Get(i)->joint_motion();
+			physx::PxArticulationLimit JointLimit;
+			JointLimit.low = CurrentPart->children()->Get(i)->joint_low_limit();
+			JointLimit.high = CurrentPart->children()->Get(i)->joint_high_limit();
+
 			CreaturePart* NewPart = NewCurrentPart->AddChild(Physics, NewCreature->mArticulation, PhysicsMaterial, ShapeFlags, Node, Scale, 
 																RelativePosition, JointPosition, max_joint_vel, joint_oscillation_speed, (physx::PxArticulationAxis::Enum)joint_axis, 
-																posDrive);
+																posDrive, JointMotion, JointLimit);
 
-			NewCreature->mShapes.emplace(NewPart, BoundingBox(RelativePosition, Scale));
+			NewCreature->mShapes.emplace(NewPart, BoundingBox(NewCreature->mShapes[NewCurrentPart].GetPosition() + RelativePosition, Scale));
 
 			PartsToLookAt.push_back(CurrentPart->children()->Get(i));
 			NewPartsToLookAt.push_back(NewPart);
@@ -575,18 +591,28 @@ static flatbuffers::Offset<EvolvingCreature::CreaturePart> CreateFlatbufferCreat
 	float BuDriveDamping = 0;
 	float BuDriveMaxForce = 0;
 
+	float BuJointLowLimit = 0;
+	float BuJointHighLimit = 0;
+
+	EvolvingCreature::ArticulationMotion BuJointMotion = EvolvingCreature::ArticulationMotion_eLIMITED;
+
 	/// The root node doesn't have a joint so I have to ignore that ones values
 	if (Part->mJoint != nullptr)
 	{
 		BuDriveStiffness = Part->mJoint->getDriveParams(Part->mJointAxis).stiffness;
 		BuDriveDamping = Part->mJoint->getDriveParams(Part->mJointAxis).damping;
 		BuDriveMaxForce = Part->mJoint->getDriveParams(Part->mJointAxis).maxForce;
+
+		BuJointLowLimit = Part->mJoint->getLimitParams(Part->mJointAxis).low;
+		BuJointHighLimit = Part->mJoint->getLimitParams(Part->mJointAxis).high;
+
+		BuJointMotion = (EvolvingCreature::ArticulationMotion)Part->mJoint->getMotion(Part->mJointAxis);
 	}
 
 	auto Parts = Builder.CreateVector(CreatureParts);
 	auto BuPart = EvolvingCreature::CreateCreaturePart(Builder, &BuPartScale, &BuPartRelativePosition, &BuPartJointPosition, 
-			Part->mMaxJointVel, Part->mJointOscillationSpeed, (EvolvingCreature::ArticulationAxis)Part->mJointAxis, BuDriveStiffness,
-			BuDriveDamping, BuDriveMaxForce, Parts);
+			Part->mMaxJointVel, Part->mJointOscillationSpeed, (EvolvingCreature::ArticulationAxis)Part->mJointAxis, 
+			BuJointMotion, BuJointLowLimit, BuJointHighLimit, BuDriveStiffness, BuDriveDamping, BuDriveMaxForce, Parts);
 
 	return BuPart;
 }

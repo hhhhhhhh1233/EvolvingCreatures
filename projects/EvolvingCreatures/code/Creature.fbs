@@ -12,6 +12,12 @@ enum ArticulationAxis:byte {
 	eSWING2 = 2,	//!< Rotational about eZ
 }
 
+enum ArticulationMotion:byte {
+	eLOCKED = 0,	//!< Locked axis, i.e. degree of freedom (DOF)
+	eLIMITED = 1,	//!< Limited DOF - set limits of joint DOF together with this flag, see PxArticulationJointReducedCoordinate::setLimitParams
+	eFREE = 2		//!< Free DOF
+}
+
 table CreaturePart {
 	scale:Vec3;
 	relative_position:Vec3;
@@ -19,6 +25,9 @@ table CreaturePart {
 	max_joint_vel:float;
 	joint_oscillation_speed:float;
 	joint_axis:ArticulationAxis;
+	joint_motion:ArticulationMotion;
+	joint_low_limit:float;
+	joint_high_limit:float;
 
 	joint_drive_stiffness:float;
 	joint_drive_damping:float;

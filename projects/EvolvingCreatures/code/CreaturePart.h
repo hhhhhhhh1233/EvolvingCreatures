@@ -30,13 +30,13 @@ public:
 
 	void AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNode Node);
 
-	CreaturePart* AddChild(	physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
-							physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition, float MaxJointVel, float JointOscillationSpeed, 
-							physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive);
+	CreaturePart* AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
+				physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition, float MaxJointVel, float JointOscillationSpeed, 
+				physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive, physx::PxArticulationMotion::Enum JointMotion, physx::PxArticulationLimit JointLimit);
 
 	/// TODO: Add options to this for different styled joints
 	/// PosDrive should probably be a parameter
-	void ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive);
+	void ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationMotion::Enum JointMotion, physx::PxArticulationLimit JointLimit, physx::PxArticulationDrive PosDrive);
 	void Activate(float TimePassed);
 	void Update();
 	void Draw(mat4 ViewProjection);

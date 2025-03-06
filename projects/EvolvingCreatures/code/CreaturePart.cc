@@ -30,7 +30,7 @@ void CreaturePart::AddBoxShape(physx::PxPhysics* Physics, vec3 Scale, GraphicsNo
 
 CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticulationReducedCoordinate* Articulation, physx::PxMaterial* PhysicsMaterial, 
 	physx::PxShapeFlags ShapeFlags, GraphicsNode Node, vec3 Scale, vec3 RelativePosition, vec3 JointPosition, float MaxJointVel, float JointOscillationSpeed, 
-	physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive)
+	physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive, physx::PxArticulationMotion::Enum JointMotion, physx::PxArticulationLimit JointLimit)
 {
 	CreaturePart* NewPart = new CreaturePart(PhysicsMaterial, ShapeFlags, MaxJointVel, JointOscillationSpeed);
 	NewPart->mLink = Articulation->createLink(mLink, physx::PxTransform(physx::PxIdentity));
@@ -60,7 +60,7 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 		NewPart->mParentNormal = vec3(xVal, yVal, zVal);
 	}
 
-	NewPart->ConfigureJoint(JointAxis, PosDrive);
+	NewPart->ConfigureJoint(JointAxis, JointMotion, JointLimit, PosDrive);
 	
 	mChildren.push_back(NewPart);
 
@@ -68,18 +68,19 @@ CreaturePart* CreaturePart::AddChild(physx::PxPhysics* Physics, physx::PxArticul
 }
 
 /// TODO: Add options to this for different styled joints
-void CreaturePart::ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationDrive PosDrive)
+void CreaturePart::ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationMotion::Enum JointMotion, physx::PxArticulationLimit JointLimit, physx::PxArticulationDrive PosDrive)
 {
 	/// This sets the joint axis to either eTWIST, eSWING1, or eSWING2
 	mJointAxis = JointAxis;
 
 	/// Configure the joint type and motion, limited motion
 	mJoint->setJointType(physx::PxArticulationJointType::eREVOLUTE);
-	mJoint->setMotion(mJointAxis, physx::PxArticulationMotion::eLIMITED);
-	physx::PxArticulationLimit limits;
-	limits.low = -physx::PxPiDivFour;
-	limits.high = physx::PxPiDivFour;
-	mJoint->setLimitParams(mJointAxis, limits);
+	mJoint->setMotion(mJointAxis, JointMotion);
+
+	//physx::PxArticulationLimit limits;
+	//limits.low = -physx::PxPiDivFour;
+	//limits.high = physx::PxPiDivFour;
+	mJoint->setLimitParams(mJointAxis, JointLimit);
 
 	/// Apply and Set targets (note the consistent axis)
 	mJoint->setDriveParams(mJointAxis, PosDrive);

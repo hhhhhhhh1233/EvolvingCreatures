@@ -56,6 +56,39 @@ inline const char *EnumNameArticulationAxis(ArticulationAxis e) {
   return EnumNamesArticulationAxis()[index];
 }
 
+enum ArticulationMotion : int8_t {
+  ArticulationMotion_eLOCKED = 0,
+  ArticulationMotion_eLIMITED = 1,
+  ArticulationMotion_eFREE = 2,
+  ArticulationMotion_MIN = ArticulationMotion_eLOCKED,
+  ArticulationMotion_MAX = ArticulationMotion_eFREE
+};
+
+inline const ArticulationMotion (&EnumValuesArticulationMotion())[3] {
+  static const ArticulationMotion values[] = {
+    ArticulationMotion_eLOCKED,
+    ArticulationMotion_eLIMITED,
+    ArticulationMotion_eFREE
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesArticulationMotion() {
+  static const char * const names[4] = {
+    "eLOCKED",
+    "eLIMITED",
+    "eFREE",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameArticulationMotion(ArticulationMotion e) {
+  if (::flatbuffers::IsOutRange(e, ArticulationMotion_eLOCKED, ArticulationMotion_eFREE)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesArticulationMotion()[index];
+}
+
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
  private:
   float x_;
@@ -94,10 +127,13 @@ struct CreaturePart FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_MAX_JOINT_VEL = 10,
     VT_JOINT_OSCILLATION_SPEED = 12,
     VT_JOINT_AXIS = 14,
-    VT_JOINT_DRIVE_STIFFNESS = 16,
-    VT_JOINT_DRIVE_DAMPING = 18,
-    VT_JOINT_DRIVE_MAX_FORCE = 20,
-    VT_CHILDREN = 22
+    VT_JOINT_MOTION = 16,
+    VT_JOINT_LOW_LIMIT = 18,
+    VT_JOINT_HIGH_LIMIT = 20,
+    VT_JOINT_DRIVE_STIFFNESS = 22,
+    VT_JOINT_DRIVE_DAMPING = 24,
+    VT_JOINT_DRIVE_MAX_FORCE = 26,
+    VT_CHILDREN = 28
   };
   const EvolvingCreature::Vec3 *scale() const {
     return GetStruct<const EvolvingCreature::Vec3 *>(VT_SCALE);
@@ -116,6 +152,15 @@ struct CreaturePart FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   EvolvingCreature::ArticulationAxis joint_axis() const {
     return static_cast<EvolvingCreature::ArticulationAxis>(GetField<int8_t>(VT_JOINT_AXIS, 0));
+  }
+  EvolvingCreature::ArticulationMotion joint_motion() const {
+    return static_cast<EvolvingCreature::ArticulationMotion>(GetField<int8_t>(VT_JOINT_MOTION, 0));
+  }
+  float joint_low_limit() const {
+    return GetField<float>(VT_JOINT_LOW_LIMIT, 0.0f);
+  }
+  float joint_high_limit() const {
+    return GetField<float>(VT_JOINT_HIGH_LIMIT, 0.0f);
   }
   float joint_drive_stiffness() const {
     return GetField<float>(VT_JOINT_DRIVE_STIFFNESS, 0.0f);
@@ -137,6 +182,9 @@ struct CreaturePart FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_MAX_JOINT_VEL, 4) &&
            VerifyField<float>(verifier, VT_JOINT_OSCILLATION_SPEED, 4) &&
            VerifyField<int8_t>(verifier, VT_JOINT_AXIS, 1) &&
+           VerifyField<int8_t>(verifier, VT_JOINT_MOTION, 1) &&
+           VerifyField<float>(verifier, VT_JOINT_LOW_LIMIT, 4) &&
+           VerifyField<float>(verifier, VT_JOINT_HIGH_LIMIT, 4) &&
            VerifyField<float>(verifier, VT_JOINT_DRIVE_STIFFNESS, 4) &&
            VerifyField<float>(verifier, VT_JOINT_DRIVE_DAMPING, 4) &&
            VerifyField<float>(verifier, VT_JOINT_DRIVE_MAX_FORCE, 4) &&
@@ -169,6 +217,15 @@ struct CreaturePartBuilder {
   void add_joint_axis(EvolvingCreature::ArticulationAxis joint_axis) {
     fbb_.AddElement<int8_t>(CreaturePart::VT_JOINT_AXIS, static_cast<int8_t>(joint_axis), 0);
   }
+  void add_joint_motion(EvolvingCreature::ArticulationMotion joint_motion) {
+    fbb_.AddElement<int8_t>(CreaturePart::VT_JOINT_MOTION, static_cast<int8_t>(joint_motion), 0);
+  }
+  void add_joint_low_limit(float joint_low_limit) {
+    fbb_.AddElement<float>(CreaturePart::VT_JOINT_LOW_LIMIT, joint_low_limit, 0.0f);
+  }
+  void add_joint_high_limit(float joint_high_limit) {
+    fbb_.AddElement<float>(CreaturePart::VT_JOINT_HIGH_LIMIT, joint_high_limit, 0.0f);
+  }
   void add_joint_drive_stiffness(float joint_drive_stiffness) {
     fbb_.AddElement<float>(CreaturePart::VT_JOINT_DRIVE_STIFFNESS, joint_drive_stiffness, 0.0f);
   }
@@ -200,6 +257,9 @@ inline ::flatbuffers::Offset<CreaturePart> CreateCreaturePart(
     float max_joint_vel = 0.0f,
     float joint_oscillation_speed = 0.0f,
     EvolvingCreature::ArticulationAxis joint_axis = EvolvingCreature::ArticulationAxis_eTWIST,
+    EvolvingCreature::ArticulationMotion joint_motion = EvolvingCreature::ArticulationMotion_eLOCKED,
+    float joint_low_limit = 0.0f,
+    float joint_high_limit = 0.0f,
     float joint_drive_stiffness = 0.0f,
     float joint_drive_damping = 0.0f,
     float joint_drive_max_force = 0.0f,
@@ -209,11 +269,14 @@ inline ::flatbuffers::Offset<CreaturePart> CreateCreaturePart(
   builder_.add_joint_drive_max_force(joint_drive_max_force);
   builder_.add_joint_drive_damping(joint_drive_damping);
   builder_.add_joint_drive_stiffness(joint_drive_stiffness);
+  builder_.add_joint_high_limit(joint_high_limit);
+  builder_.add_joint_low_limit(joint_low_limit);
   builder_.add_joint_oscillation_speed(joint_oscillation_speed);
   builder_.add_max_joint_vel(max_joint_vel);
   builder_.add_joint_position(joint_position);
   builder_.add_relative_position(relative_position);
   builder_.add_scale(scale);
+  builder_.add_joint_motion(joint_motion);
   builder_.add_joint_axis(joint_axis);
   return builder_.Finish();
 }
@@ -226,6 +289,9 @@ inline ::flatbuffers::Offset<CreaturePart> CreateCreaturePartDirect(
     float max_joint_vel = 0.0f,
     float joint_oscillation_speed = 0.0f,
     EvolvingCreature::ArticulationAxis joint_axis = EvolvingCreature::ArticulationAxis_eTWIST,
+    EvolvingCreature::ArticulationMotion joint_motion = EvolvingCreature::ArticulationMotion_eLOCKED,
+    float joint_low_limit = 0.0f,
+    float joint_high_limit = 0.0f,
     float joint_drive_stiffness = 0.0f,
     float joint_drive_damping = 0.0f,
     float joint_drive_max_force = 0.0f,
@@ -239,6 +305,9 @@ inline ::flatbuffers::Offset<CreaturePart> CreateCreaturePartDirect(
       max_joint_vel,
       joint_oscillation_speed,
       joint_axis,
+      joint_motion,
+      joint_low_limit,
+      joint_high_limit,
       joint_drive_stiffness,
       joint_drive_damping,
       joint_drive_max_force,
