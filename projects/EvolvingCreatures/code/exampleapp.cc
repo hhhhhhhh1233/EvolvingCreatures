@@ -452,8 +452,8 @@ ExampleApp::Run()
 			static bool bUseLoadedCreatures;
 			ImGui::Checkbox("Use loaded creatures in population", &bUseLoadedCreatures);
 
-			ImGui::DragInt("How many creatures", &NumberOfCreatures, 1, 5, 500);
-			ImGui::DragInt("How many to keep per gen", &GenerationSurvivors, 1, 5, NumberOfCreatures);
+			ImGui::DragInt("Population Size", &NumberOfCreatures, 1, 5, 500);
+			ImGui::DragInt("Generation Survivors", &GenerationSurvivors, 1, 5, NumberOfCreatures);
 			if (GenerationSurvivors > NumberOfCreatures)
 				GenerationSurvivors = NumberOfCreatures;
 			ImGui::DragFloat("Mutation Chance", &MutationChance, 0.05, 0, 1, "%.2f");
