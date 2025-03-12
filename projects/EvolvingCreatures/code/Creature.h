@@ -33,7 +33,7 @@ public:
 
 	void Update();
 	void Activate(float TimePassed);
-	void Draw(mat4 ViewProjection);
+	void Draw(mat4 ViewProjection, std::shared_ptr<ShaderResource> Shader = nullptr);
 
 	void EnableGravity(bool NewState);
 

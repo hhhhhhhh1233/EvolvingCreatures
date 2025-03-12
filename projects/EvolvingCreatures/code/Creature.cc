@@ -316,9 +316,9 @@ void Creature::Activate(float TimePassed)
 	}
 }
 
-void Creature::Draw(mat4 ViewProjection)
+void Creature::Draw(mat4 ViewProjection, std::shared_ptr<ShaderResource> Shader)
 {
-	mRootPart->Draw(ViewProjection);
+	mRootPart->Draw(ViewProjection, Shader);
 }
 
 void Creature::EnableGravity(bool NewState)

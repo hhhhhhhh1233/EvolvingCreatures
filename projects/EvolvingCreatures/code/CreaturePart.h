@@ -39,5 +39,5 @@ public:
 	void ConfigureJoint(physx::PxArticulationAxis::Enum JointAxis, physx::PxArticulationMotion::Enum JointMotion, physx::PxArticulationLimit JointLimit, physx::PxArticulationDrive PosDrive);
 	void Activate(float TimePassed);
 	void Update();
-	void Draw(mat4 ViewProjection);
+	void Draw(mat4 ViewProjection, std::shared_ptr<ShaderResource> Shader = nullptr);
 };

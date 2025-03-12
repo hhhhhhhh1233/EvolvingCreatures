@@ -627,8 +627,8 @@ ExampleApp::Run()
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 			glClear(GL_DEPTH_BUFFER_BIT);
-			NewCreature->Draw(lightSpaceMatrix);
-			Quad.draw(lightSpaceMatrix);
+			NewCreature->Draw(lightSpaceMatrix, simpleDepthShader);
+			Quad.draw(lightSpaceMatrix, simpleDepthShader);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

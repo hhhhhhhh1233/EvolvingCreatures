@@ -111,10 +111,10 @@ void CreaturePart::Update()
 		Child->Update();
 }
 
-void CreaturePart::Draw(mat4 ViewProjection)
+void CreaturePart::Draw(mat4 ViewProjection, std::shared_ptr<ShaderResource> Shader)
 {
-	mNode.draw(ViewProjection);
+	mNode.draw(ViewProjection, Shader);
 
 	for (auto Child : mChildren)
-		Child->Draw(ViewProjection);
+		Child->Draw(ViewProjection, Shader);
 }

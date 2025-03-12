@@ -36,11 +36,14 @@ public:
 		transform = Transform;
 	}
 
-	void draw(mat4 &viewProjection)
+	void draw(mat4 &viewProjection, std::shared_ptr<ShaderResource> Shader = nullptr)
 	{
 		for (auto& mesh : meshes)
 		{
-			mesh->material.shader->UseProgram();
+			if (Shader == nullptr)
+				mesh->material.shader->UseProgram();
+			else
+				Shader->UseProgram();
 			mesh->material.shader->SetMatrix("viewProjection", viewProjection);
 			mesh->material.shader->SetMatrix("transform", transform);
 			mesh->draw();
