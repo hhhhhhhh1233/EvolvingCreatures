@@ -10,10 +10,9 @@ Snake Like Creature | Waggling Creature
 
 # Running the Program
 
-[Grab the latest release from here and unzip it](https://github.com/hhhhhhhh1233/EvolvingCreatures/releases)
+[Grab the latest release from here](https://github.com/hhhhhhhh1233/EvolvingCreatures/releases) and unzip it. Then just run the EvolvingCreatures.exe.
 
-Then just run the EvolvingCreatures.exe
-
+## Controls
 Hold right click to move the camera around and WASD to move around. Q and E will move the camera up and down. The ImGui window has all of the options for creature management, including loading in saved creatures or starting a new run to create new creatures.
 
 Menu Option | Description
