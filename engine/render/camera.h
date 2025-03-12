@@ -54,17 +54,37 @@ public:
 				/// SAVE WHERE THE CURSOR IS SO WE CAN PUT IT BACK WHEN THEY RELEASE THE BUTTON
 				glfwGetCursorPos(window, &xOldPos, &yOldPos);
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-				glfwSetCursorPos(window, 300, 300);
+				glfwSetCursorPos(window, xOldPos, yOldPos);
 				bFirstPress = false;
 			}
 			glfwGetCursorPos(window, &xpos, &ypos);
 
-			mHorizontalAngle += deltaseconds * mMouseSpeed * (300 - xpos);
-			mVerticalAngle += deltaseconds * mMouseSpeed * (300 - ypos);
+			mHorizontalAngle += deltaseconds * mMouseSpeed * (xOldPos - xpos);
+			mVerticalAngle += deltaseconds * mMouseSpeed * (yOldPos - ypos);
 			mVerticalAngle = mVerticalAngle > verticalLimit ? verticalLimit : mVerticalAngle;
 			mVerticalAngle = mVerticalAngle < -verticalLimit ? -verticalLimit : mVerticalAngle;
 
-			glfwSetCursorPos(window, 300, 300);
+			glfwSetCursorPos(window, xOldPos, yOldPos);
+
+			if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+				mCurrentSpeed = INCREASED_SPEED;
+			else
+				mCurrentSpeed = REGULAR_SPEED;
+
+			/// MOVE THE CAMERA POSITION
+			bool bPressLeft = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
+			bool bPressRight = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+			bool bPressForward = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
+			bool bPressBack = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+			bool bPressUp = glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS;
+			bool bPressDown = glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS;
+
+			mPosition += normalize(mTarget - mPosition) * deltaseconds * mCurrentSpeed * (int(bPressForward) - int(bPressBack));
+			mPosition += normalize(cross(normalize(mTarget - mPosition), vec3(0, 1, 0))) * deltaseconds * mCurrentSpeed * (int(bPressRight) - int(bPressLeft));
+			mPosition.y += deltaseconds * mCurrentSpeed * (int(bPressUp) - int(bPressDown));
+
+			if (mPosition.y < 0.2)
+				mPosition.y = 0.2;
 		}
 		else
 		{
@@ -77,25 +97,6 @@ public:
 			bFirstPress = true;
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-			mCurrentSpeed = INCREASED_SPEED;
-		else
-			mCurrentSpeed = REGULAR_SPEED;
-
-		/// MOVE THE CAMERA POSITION
-		bool bPressLeft = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
-		bool bPressRight = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
-		bool bPressForward = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
-		bool bPressBack = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
-		bool bPressUp = glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS;
-		bool bPressDown = glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS;
-
-		mPosition += normalize(mTarget - mPosition) * deltaseconds * mCurrentSpeed * (int(bPressForward) - int(bPressBack));
-		mPosition += normalize(cross(normalize(mTarget - mPosition), vec3(0, 1, 0))) * deltaseconds * mCurrentSpeed * (int(bPressRight) - int(bPressLeft));
-		mPosition.y += deltaseconds * mCurrentSpeed * (int(bPressUp) - int(bPressDown));
-
-		if (mPosition.y < 0.2)
-			mPosition.y = 0.2;
 
 		mTarget = mPosition + vec3(cos(mVerticalAngle) * sin(mHorizontalAngle), sin(mVerticalAngle), cos(mVerticalAngle) * cos(mHorizontalAngle));
 	}
