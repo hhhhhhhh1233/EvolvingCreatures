@@ -1,11 +1,15 @@
 # Evolving Creatures Overview
 This is a program that can generate 3D creatures using genetic algorithms. 
-Here's an example of how the creatures can look after running for a few generations.
 They can only be trained for horizontal movement at the moment.
+Inspired by Karl Sims' [Evolved Virtual Creatures](https://www.youtube.com/watch?v=RZtZia4ZkX8)
+
+# Examples 
 
 Snake Like Creature | Waggling Creature
 :-------------------------:|:-------------------------:
 ![Creature6-Short](https://github.com/user-attachments/assets/70ea9abf-12ed-40a3-a0fe-005a4554861d) | ![Creature2](https://github.com/user-attachments/assets/1edca0c8-d462-4b2f-95c6-05c94714df91)
+
+These creatures were only run for a few generations, but they display some interesting locomotive capabilites.
 
 
 # Running the Program
