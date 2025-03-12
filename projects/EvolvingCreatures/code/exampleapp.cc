@@ -683,6 +683,9 @@ ExampleApp::Run()
 	/// ------------------------------------------
 	/// [END] SHUTDOWN PHYSICS
 	/// ------------------------------------------
+
+	/// Deleting the char* we created for storing the name of the creature
+	delete[] SavedCreatureName;
 }
 
 } // namespace Example
