@@ -158,11 +158,6 @@ ExampleApp::Run()
 	std::shared_ptr<ShaderResource> simpleDepthShader = std::make_shared<ShaderResource>();
 	simpleDepthShader->LoadShaders("Assets\\Shaders\\simpleDepthShader.vert", "Assets\\Shaders\\simpleDepthShader.frag");
 
-	MeshResource sphereMesh;
-	sphereMesh.LoadOBJ("Assets\\objs\\sphere.obj");
-
-	GraphicsNode sphere = GraphicsNode(std::make_shared<MeshResource>(std::move(sphereMesh)), std::make_shared<TextureResource>(gridTexture), shader, mat4(), 32);
-
 	GraphicsNode cube = LoadGLTF("Assets\\glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridTexture));
 	GraphicsNode armCube = LoadGLTF("Assets\\glTFs\\CubeglTF\\", "Cube.gltf", lightingShader, std::make_shared<TextureResource>(gridTexture));
 
@@ -182,7 +177,7 @@ ExampleApp::Run()
 	PointLightSource light;
 	light.position = vec3(0, 0, -2);
 	light.color = vec3(1, 1, 1);
-	light.intensity = 0.2;
+	light.intensity = 0.0;
 
 	DirectionalLightSource sun;
 	sun.direction = vec3(0, -1, -3);
@@ -227,86 +222,10 @@ ExampleApp::Run()
 		return;
 	}
 
-	physx::PxDefaultCpuDispatcher* Dispatcher = NULL;
-
-	physx::PxTolerancesScale ToleranceScale;
-
-	ToleranceScale.length = 1;
-	ToleranceScale.speed = 981;
-
-	physx::PxSceneDesc SceneDesc(ToleranceScale);
-	SceneDesc.gravity = { 0, -9.8, 0 };
-	Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
-	SceneDesc.cpuDispatcher = Dispatcher;
-	SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
-	SceneDesc.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-	SceneDesc.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
-
-	physx::PxScene* mScene = Physics->createScene(SceneDesc);
-	mScene->setFlag(physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS, true);
+	physx::PxDefaultCpuDispatcher* Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 
 	/// ------------------------------------------
 	/// [END] INIT PHYSICS
-	/// ------------------------------------------
-
-	/// ------------------------------------------
-	/// [BEGIN] CREATE ACTORS
-	/// ------------------------------------------
-
-	physx::PxShapeFlags shapeFlags = physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE;
-	physx::PxMaterial* materialPtr = Physics->createMaterial(0.5f, 0.5f, 0.1f);
-
-	physx::PxRigidStatic* PlaneCollision = Physics->createRigidStatic(physx::PxTransformFromPlaneEquation(physx::PxPlane(physx::PxVec3(0.f, 1.f, 0.f), 0.f)));
-	{
-		physx::PxShape* shape = Physics->createShape(physx::PxPlaneGeometry(), &materialPtr, 1, true, shapeFlags);
-		PlaneCollision->attachShape(*shape);
-		shape->release();
-	}
-
-	mScene->addActor(*PlaneCollision);
-
-	auto CreatureStart = std::chrono::high_resolution_clock::now();
-
-	vec3 RootScale(1.5f, 2.5f, 1.5f);
-	vec3 ChildScale(1.5, 3.5, 1.5);
-
-	Creature* NewCreature = new Creature(Physics, materialPtr, shapeFlags, artCube, RootScale);
-	NewCreature->SetPosition(vec3(0, 10, 0));
-
-	/// The positions are different, the way you get that is by taking parent scale plus child scale in the axis want to move it along, 4 = 1.5 + 2.5, and 5 = 2.5 + 2.5
-	vec3 FirstChildPosition(0, RootScale.y + ChildScale.y, 0);
-	vec3 ChildPosition(0, ChildScale.y + ChildScale.y, 0);
-
-	/// The way you get the joint is by taking just the parent's scale in that axis
-	vec3 FirstChildJointPosition(0, RootScale.y, 0);
-	vec3 ChildJointPosition(0, ChildScale.y, 0);
-
-	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-	//NewCreature->AddRandomPart(Physics, materialPtr, shapeFlags, artCube);
-
-	//NewCreature->EnableGravity(false);
-
-	//CreaturePart* a = NewCreature->mRootPart->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, FirstChildPosition, FirstChildJointPosition, 20, 3);
-	//CreaturePart* b = a->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
-	//CreaturePart* c = b->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
-	//CreaturePart* d = c->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
-	//CreaturePart* e = d->AddChild(mPhysics, NewCreature->mArticulation, materialPtr, shapeFlags, artCube, ChildScale, ChildPosition, ChildJointPosition, 20, 3);
-
-	NewCreature->AddToScene(mScene);
-
-	Creature* MutatedCreature = NewCreature->GetMutatedCreature(Physics, 1.5, 0.5);
-	//Creature* MutatedCreature = NewCreature->GetCreatureCopy(Physics);
-	MutatedCreature->SetPosition(vec3(5, 10, 0));
-	MutatedCreature->AddToScene(mScene);
-
-	/// ------------------------------------------
-	/// [END] CREATE ACTORS
 	/// ------------------------------------------
 
 	GenerationManager* GenMan = new GenerationManager(Physics, Dispatcher, artCube);
@@ -315,14 +234,8 @@ ExampleApp::Run()
 	float mStepSize = 1.0f / 60.0f;
 
 	bool bAttachCam = false;
-	bool bResetCreature = false;
-	bool bActiveCreature = true;
-	bool bSimulateGravity = true;
-	int BodyPartsNum = 2;
 	int CreatureIndexToDraw = 0;
 	bool bDrawBoundingBox = false;
-
-	float SimulationSpeed = 1;
 
 	std::vector<char*> Entries;
 	FindCreatureFiles("Creatures", Entries);
@@ -330,7 +243,7 @@ ExampleApp::Run()
 	char* SavedCreatureName = new char[30];
 	strcpy(SavedCreatureName, "NewCreature");
 
-	this->window->SetUiRender([this, &bAttachCam, &bResetCreature, &BodyPartsNum, &bActiveCreature, &bSimulateGravity, &NewCreature, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox, &Entries, &SavedCreatureName, &SimulationSpeed]()
+	this->window->SetUiRender([this, &bAttachCam, GenMan, &CreatureIndexToDraw, &bDrawBoundingBox, &Entries, &SavedCreatureName]()
 	{
 		bool show = true;
 		// create a new window
@@ -349,8 +262,6 @@ ExampleApp::Run()
 		/// Debug Feature
 		char* StateNames[] = { {"Nothing"} , {"Running"}, {"Finished"}, {"Waiting"}};
 		ImGui::Text("Current state: %s", StateNames[GenMan->mCurrentState]);
-
-		ImGui::DragFloat("Simulation Speed", &SimulationSpeed, 0.5, 0, 10, "%.2f");
 
 		if (GenMan->mCurrentState == GenerationManagerState::Finished)
 		{
@@ -444,7 +355,6 @@ ExampleApp::Run()
 				}
 			}
 
-
 			ImGui::NextColumn();
 
 			ImGui::Text("Evolution Options");
@@ -466,7 +376,6 @@ ExampleApp::Run()
 			if (ImGui::Button("Start"))
 			{
 				GenMan->Start(NumberOfGenerations, EvaluationTime, GenerationSurvivors, MutationChance, MutationSeverity, NumberOfCreatures, bUseLoadedCreatures);
-				//GenMan->GenerateCreatures(NumberOfCreatures);
 			}
 			ImGui::Columns(1);
 		}
@@ -490,15 +399,9 @@ ExampleApp::Run()
 			ImGui::Columns(1);
 		}
 
-
 		// close window
 		ImGui::End();
 	});
-
-	//float TestAccumulator = 0;
-	//float TestBoxUpdateTime = 5;
-	//BoundingBox TestBox;
-	//CreaturePart* ParentToTestBox = nullptr;
 
 	const auto [ SCR_WIDTH, SCR_HEIGHT ] = window->GetWidthHeight();
 
@@ -509,68 +412,21 @@ ExampleApp::Run()
 		float timesincestart = std::chrono::duration_cast<std::chrono::milliseconds>(end - appStart).count() / 1000.0f;
 		start = std::chrono::high_resolution_clock::now();
 
-		//if (bResetCreature)
-		//{
-
-		//	std::cout << "\n----------------------------------------\nCreating new Creature!\n";
-		//	CreatureStart = std::chrono::high_resolution_clock::now();
-		//	NewCreature->RemoveFromScene(mScene);
-		//	delete NewCreature;
-
-		//	NewCreature = new Creature(mPhysics, materialPtr, shapeFlags, artCube, vec3(1.5f, 1.5f, 1.5f));
-		//	NewCreature->SetPosition(vec3(0, 10, 0));
-
-		//	for (int i = 0; i < BodyPartsNum; i++)
-		//		NewCreature->AddRandomPart(mPhysics, materialPtr, shapeFlags, artCube);
-
-		//	NewCreature->AddToScene(mScene);
-
-		//	NewCreature->EnableGravity(bSimulateGravity);
-
-
-		//	MutatedCreature->RemoveFromScene(mScene);
-		//	delete MutatedCreature;
-		//	MutatedCreature = NewCreature->GetMutatedCreature(mPhysics, 0.5, 0.3);
-		//	MutatedCreature->SetPosition(vec3(10, 10, 0));
-		//	MutatedCreature->AddToScene(mScene);
-
-		//	bResetCreature = false;
-		//	std::cout << "\n----------------------------------------";
-		//}
-
 		GenMan->Update(deltaseconds);
 
 		mAccumulator += deltaseconds;
 		if (mAccumulator > mStepSize)
 		{
-			if (bActiveCreature)
-			{
-				//NewCreature->Activate(timesincestart);
-				//MutatedCreature->Activate(timesincestart);
-				if (GenMan->mCurrentState == GenerationManagerState::Running)
-					GenMan->Activate();
-				else if (GenMan->mCurrentState != GenerationManagerState::Waiting)
-					GenMan->Activate();
+			if (GenMan->mCurrentState != GenerationManagerState::Waiting)
+				GenMan->Activate();
 
-				if (GenMan->mCurrentState == GenerationManagerState::Nothing)
-					GenMan->ActivateLoadedCreatures();
-			}
+			if (GenMan->mCurrentState == GenerationManagerState::Nothing)
+				GenMan->ActivateLoadedCreatures();
 
-			mScene->simulate(SimulationSpeed * mStepSize);
-			mScene->fetchResults(true);
-
-			GenMan->Simulate(SimulationSpeed * mStepSize);
+			GenMan->Simulate(mStepSize);
 
 			mAccumulator -= mStepSize;
 		}
-		physx::PxVec3 CreatureVel = NewCreature->mRootPart->mLink->getLinearVelocity();
-		vec3 CreatureHorizontalVel = vec3(CreatureVel.x, 0, CreatureVel.z);
-
-		if (glfwGetKey(window->window, GLFW_KEY_F) == GLFW_PRESS)
-			NewCreature->mRootPart->mLink->addForce({ 0, 45, 0 });
-		
-		if (glfwGetKey(window->window, GLFW_KEY_G) == GLFW_PRESS)
-			NewCreature->mRootPart->mLink->addTorque({ 50, 0, 0 });
 		
 		if (GenMan->mCurrentState == GenerationManagerState::Finished && bAttachCam)
 		{
@@ -592,17 +448,9 @@ ExampleApp::Run()
 		this->window->Update();
 
 		// do stuff
-		float lightRadius = 8, lightHeight = 4, lightSpeedMultiplier = 0.7;
-		light.position = vec3(lightRadius * sin(elapsed_seconds.count() * lightSpeedMultiplier), lightHeight, lightRadius * cos(elapsed_seconds.count() * lightSpeedMultiplier));
-		light.UpdateShader(&*shader);
 		sun.UpdateShader(&*shader);
-		light.UpdateShader(&*lightingShader);
 		sun.UpdateShader(&*lightingShader);
 		
-		sphere.transform = translate(light.position) * scale(0.1);
-
-		NewCreature->Update();
-		MutatedCreature->Update();
 		GenMan->UpdateCreatures(deltaseconds);
 		
 		mat4 view = cam.GetView();
@@ -618,8 +466,6 @@ ExampleApp::Run()
 		lightingShader->UseProgram();
 		lightingShader->SetVec3("viewPos", cam.mPosition);
 
-		sphere.draw(viewProjection);
-
 		/// ----------------------------------------
 		/// [BEGIN] MORE SHADOW MAPPING STUFF
 		/// ----------------------------------------
@@ -627,7 +473,7 @@ ExampleApp::Run()
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 			glClear(GL_DEPTH_BUFFER_BIT);
-			NewCreature->Draw(lightSpaceMatrix, simpleDepthShader);
+			GenMan->DrawCreatures(viewProjection, simpleDepthShader);
 			Quad.draw(lightSpaceMatrix, simpleDepthShader);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
@@ -638,12 +484,6 @@ ExampleApp::Run()
 		/// [END] MORE SHADOW MAPPING STUFF
 		/// ----------------------------------------
 
-		sphere.draw(viewProjection);
-
-		//NewCreature->Draw(viewProjection);
-		//MutatedCreature->Draw(viewProjection);
-		//NewCreature->DrawBoundingBoxes(viewProjection, vec3(0, 20, 0), cube);
-		//MutatedCreature->DrawBoundingBoxes(viewProjection, vec3(10, 20, 0), artCube);
 		if (GenMan->mCurrentState == GenerationManagerState::Running || GenMan->mCurrentState == GenerationManagerState::Waiting)
 		{
 			GenMan->DrawCreatures(viewProjection);

@@ -151,11 +151,11 @@ void GenerationManager::UpdateCreatures(float dt)
 	}
 }
 
-void GenerationManager::DrawCreatures(mat4 ViewProjection)
+void GenerationManager::DrawCreatures(mat4 ViewProjection, std::shared_ptr<ShaderResource> Shader)
 {
 	for (auto Bundle : mCreatures)
 	{
-		Bundle->mCreature->Draw(ViewProjection);
+		Bundle->mCreature->Draw(ViewProjection, Shader);
 	}
 }
 

@@ -88,7 +88,7 @@ public:
 
 	void Simulate(float StepSize);
 	void UpdateCreatures(float dt);
-	void DrawCreatures(mat4 ViewProjection);
+	void DrawCreatures(mat4 ViewProjection, std::shared_ptr<ShaderResource> Shader = nullptr);
 	void DrawFinishedCreatures(mat4 ViewProjection, int CreatureIndex);
 	void SetPositionOfCreatures(vec3 Position);
 	void Activate();
