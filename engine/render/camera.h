@@ -27,6 +27,8 @@ public:
 		mPosition = vec3(0, 0, 0);
 		mTarget = vec3(0, 0, 0);
 		mUp = vec3(0, 1, 0);
+		xOldPos = 0;
+		yOldPos = 0;
 	}
 
 	Camera(vec3 CameraPosition, vec3 CameraTarget, vec3 Up)
@@ -34,6 +36,8 @@ public:
 		mPosition = CameraPosition;
 		mTarget = CameraTarget;
 		mUp = Up;
+		xOldPos = 0;
+		yOldPos = 0;
 	}
 
 	mat4 GetView()
