@@ -22,7 +22,6 @@ public:
 	bool bFirstPress = true;
 	double xOldPos, yOldPos;
 
-
 	Camera()
 	{
 		mPosition = vec3(0, 0, 0);
@@ -49,12 +48,12 @@ public:
 		/// ROTATE THE CAMREA WHILE RIGHT-CLICK IS HELD
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
 		{
+			/// CAMERA ROTATION
+
 			if (bFirstPress)
 			{
-				/// SAVE WHERE THE CURSOR IS SO WE CAN PUT IT BACK WHEN THEY RELEASE THE BUTTON
 				glfwGetCursorPos(window, &xOldPos, &yOldPos);
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-				glfwSetCursorPos(window, xOldPos, yOldPos);
 				bFirstPress = false;
 			}
 			glfwGetCursorPos(window, &xpos, &ypos);
@@ -65,6 +64,8 @@ public:
 			mVerticalAngle = mVerticalAngle < -verticalLimit ? -verticalLimit : mVerticalAngle;
 
 			glfwSetCursorPos(window, xOldPos, yOldPos);
+
+			/// CAMERA POSITION
 
 			if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 				mCurrentSpeed = INCREASED_SPEED;
@@ -90,13 +91,10 @@ public:
 		{
 			if (!bFirstPress)
 			{
-				/// IF THE RIGHT MOUSE BUTTON IS RELEASED PUT THE CURSOR BACK WHERE IT WAS WHEN IT WAS FIRST PRESSED
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-				glfwSetCursorPos(window, xOldPos, yOldPos);
 			}
 			bFirstPress = true;
 		}
-
 
 		mTarget = mPosition + vec3(cos(mVerticalAngle) * sin(mHorizontalAngle), sin(mVerticalAngle), cos(mVerticalAngle) * cos(mHorizontalAngle));
 	}
