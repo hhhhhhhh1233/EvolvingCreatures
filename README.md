@@ -1,20 +1,34 @@
 # Evolving Creatures Overview
-This is a program that can generate 3D creatures using genetic algorithms. 
+This is a program that can generate 3D creatures that can move about on their own using genetic algorithms. 
 They can only be trained for horizontal movement at the moment.
+Any interesting creatures that you generate can also be saved to file and loaded in later, they'll be saved to the Creatures directory.
+
 Inspired by Karl Sims' [Evolved Virtual Creatures](https://www.youtube.com/watch?v=RZtZia4ZkX8)
 
+# Table of Contents
+ - [Examples](#examples)
+ - [Running the Program](#running-the-program)
+   - [Controls](#controls)
+ - [Setup Project](#setup-project)
+   - [vcpkg installation](#vcpkg-installation)
+   - [Installing PhysX](#installing-physx)
+   - [Cloning project](#cloning-project)
+
 # Examples 
+
+Here are some example creatures I generated that exhibit some ability to move around on their own. 
+These creatures were only run for a few generations, but they display some interesting locomotive capabilites.
 
 Snake Like Creature | Waggling Creature
 :-------------------------:|:-------------------------:
 ![Creature6-Short](https://github.com/user-attachments/assets/70ea9abf-12ed-40a3-a0fe-005a4554861d) | ![Creature2](https://github.com/user-attachments/assets/1edca0c8-d462-4b2f-95c6-05c94714df91)
 
-These creatures were only run for a few generations, but they display some interesting locomotive capabilites.
-
-
 # Running the Program
 
-[Grab the latest release from here](https://github.com/hhhhhhhh1233/EvolvingCreatures/releases) and unzip it. Then just run the EvolvingCreatures.exe.
+To run the program all you have to do is [grab the latest release from here](https://github.com/hhhhhhhh1233/EvolvingCreatures/releases) and unzip it, then just run the EvolvingCreatures.exe.
+
+> [!NOTE]
+> There aren't any specific dependencies as far I know, but I've only tested on windows computers running NVIDIA GPUs.
 
 ## Controls
 Hold right click to move the camera around and WASD to move around. Q and E will move the camera up and down. The ImGui window has all of the options for creature management, including loading in saved creatures or starting a new run to create new creatures.
@@ -34,6 +48,9 @@ To set up the project files locally you will need to have PhysX installed, below
 ## vcpkg installation
 First make sure to install vcpkg, if you don't have it first make sure you're in your home directory then run the below based on your system
 
+> [!NOTE]
+> The project files expect vcpkg to be installed in the __home directory__, if you want it to be somewhere else edit line 11 and line 22 in [root CMakeLists.txt](./CMakeLists.txt) to point to your vcpkg directory and PhysX.
+
 ### Windows
 
 ```console
@@ -52,8 +69,7 @@ cd vcpkg
 
 ## Installing PhysX
 
-Make sure you're positioned in the vcpkg directory then run
-
+To install physx make sure you're positioned in the vcpkg directory and run:
 ### Windows
 
 ```console
@@ -68,7 +84,7 @@ Make sure you're positioned in the vcpkg directory then run
 
 ## Cloning project
 
-Then you can clone the project and run 
+Finally to setup the project locally follow these steps:
 
 ```console
 git clone https://github.com/hhhhhhhh1233/EvolvingCreatures.git
@@ -76,6 +92,6 @@ cd EvolvingCreatures
 mkdir build && cd build
 cmake ..
 ```
-If there are any issues running cmake then make sure that both vcpkg and physx are installed in the proper location, or edit the cmake file to point to where they are on your system.
 
-
+> [!NOTE]
+> If there are any issues running cmake then make sure that both vcpkg and physx are installed in the proper location, or edit the cmake file to point to where they are on your system.
